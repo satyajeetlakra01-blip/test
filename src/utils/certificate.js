@@ -1,10 +1,12 @@
 /**
- * Upgraded High-Resolution Canvas Certificate Generator
+ * Clean High-Resolution Canvas Certificate Generator
  * Standard ISO 2000x1414 resolution (crisp 300 DPI diploma ratio).
- * Features guilloche rosette watermark, ornate multi-tier gold borders,
- * academic crest with laurels, honors badge, detailed score breakdown,
- * embossed metallic gold seal with swallowtail ribbons, authentic calligraphic signatures,
- * and procedural security QR verification matrix.
+ * Clean, prestigious, authentic:
+ * - NO unwanted fake person names
+ * - NO unwanted fake signatures
+ * - NO unwanted third-party logos
+ * - Displays student's verified name, grade, school, score breakdown,
+ *   honors badge, clean official Olympiad seal, issue date, and authorized signing line.
  */
 
 // Draw an ornate corner fleuron ornament
@@ -38,92 +40,8 @@ function drawCornerOrnament(ctx, x, y, angle) {
   ctx.restore();
 }
 
-// Draw realistic calligraphic cursive signature
-function drawCursiveSignature(ctx, name, startX, startY, color = '#0F2942') {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2.2;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  ctx.beginPath();
-  if (name.includes('Sharma')) {
-    // Dr. A. K. Sharma
-    ctx.moveTo(startX, startY);
-    ctx.bezierCurveTo(startX + 15, startY - 26, startX + 30, startY + 8, startX + 45, startY - 14);
-    ctx.bezierCurveTo(startX + 60, startY - 32, startX + 75, startY + 6, startX + 90, startY - 8);
-    ctx.bezierCurveTo(startX + 110, startY - 20, startX + 130, startY + 14, startX + 150, startY - 18);
-    ctx.bezierCurveTo(startX + 175, startY - 36, startX + 190, startY + 12, startX + 220, startY - 10);
-    ctx.stroke();
-
-    // Flourish underline loop
-    ctx.beginPath();
-    ctx.moveTo(startX + 30, startY + 12);
-    ctx.quadraticCurveTo(startX + 140, startY + 28, startX + 230, startY + 4);
-    ctx.stroke();
-  } else {
-    // Prof. Eleanor Vance
-    ctx.moveTo(startX, startY);
-    ctx.bezierCurveTo(startX + 20, startY - 30, startX + 35, startY + 10, startX + 55, startY - 12);
-    ctx.bezierCurveTo(startX + 75, startY - 28, startX + 95, startY + 12, startX + 115, startY - 16);
-    ctx.bezierCurveTo(startX + 135, startY - 22, startX + 155, startY + 16, startX + 180, startY - 24);
-    ctx.bezierCurveTo(startX + 200, startY - 34, startX + 215, startY + 8, startX + 235, startY - 6);
-    ctx.stroke();
-
-    // Loop
-    ctx.beginPath();
-    ctx.moveTo(startX + 15, startY + 8);
-    ctx.quadraticCurveTo(startX + 120, startY + 24, startX + 240, startY + 6);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-// Draw procedural 2D Verification QR code matrix
-function drawMockQrCode(ctx, x, y, size) {
-  ctx.save();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(x, y, size, size);
-  ctx.strokeStyle = '#0C1E3A';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(x, y, size, size);
-
-  const gridSize = 14;
-  const cellSize = size / gridSize;
-
-  // Predictable pseudo-random pattern based on coordinates
-  ctx.fillStyle = '#0C1E3A';
-
-  // 3 Finder patterns at corners
-  const drawFinder = (fx, fy) => {
-    ctx.fillRect(fx, fy, cellSize * 3.5, cellSize * 3.5);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(fx + cellSize * 0.7, fy + cellSize * 0.7, cellSize * 2.1, cellSize * 2.1);
-    ctx.fillStyle = '#0C1E3A';
-    ctx.fillRect(fx + cellSize * 1.2, fy + cellSize * 1.2, cellSize * 1.1, cellSize * 1.1);
-  };
-
-  drawFinder(x + cellSize, y + cellSize);
-  drawFinder(x + size - cellSize * 4.5, y + cellSize);
-  drawFinder(x + cellSize, y + size - cellSize * 4.5);
-
-  // Data modules
-  for (let r = 0; r < gridSize; r += 1) {
-    for (let c = 0; c < gridSize; c += 1) {
-      if ((r < 5 && c < 5) || (r < 5 && c > 8) || (r > 8 && c < 5)) continue;
-      // Deterministic hash fill
-      if ((r * 7 + c * 13 + (r ^ c)) % 3 === 0 || (r + c) % 5 === 0) {
-        ctx.fillRect(x + c * cellSize, y + r * cellSize, cellSize * 0.9, cellSize * 0.9);
-      }
-    }
-  }
-
-  ctx.restore();
-}
-
-// Draw academic crest with dual laurel wreaths
-function drawAcademicCrest(ctx, cx, cy, isPrep) {
+// Draw academic crest with dual laurel wreaths (purely symbolic for the Olympiad)
+function drawScholasticEmblem(ctx, cx, cy, isPrep) {
   ctx.save();
   ctx.translate(cx, cy);
 
@@ -157,22 +75,14 @@ function drawAcademicCrest(ctx, cx, cy, isPrep) {
   ctx.closePath();
   ctx.fill();
 
-  // Center torch/lamp dot
-  ctx.beginPath();
-  ctx.arc(0, 0, 7, 0, Math.PI * 2);
-  ctx.fillStyle = goldPrimary;
-  ctx.fill();
-
   // Laurel branches left and right
   ctx.strokeStyle = goldPrimary;
   ctx.lineWidth = 2.5;
 
-  // Left laurel arc
   ctx.beginPath();
   ctx.arc(-26, 0, 38, -Math.PI * 0.45, Math.PI * 0.45, false);
   ctx.stroke();
 
-  // Right laurel arc
   ctx.beginPath();
   ctx.arc(26, 0, 38, Math.PI * 0.55, Math.PI * 1.45, false);
   ctx.stroke();
@@ -180,7 +90,6 @@ function drawAcademicCrest(ctx, cx, cy, isPrep) {
   // Laurel leaves
   for (let i = -3; i <= 3; i += 1) {
     const ang = (i * Math.PI) / 10;
-    // Left leaf
     const lx = -48 + Math.cos(ang) * 12;
     const ly = Math.sin(ang) * 32;
     ctx.beginPath();
@@ -189,7 +98,6 @@ function drawAcademicCrest(ctx, cx, cy, isPrep) {
     ctx.fill();
     ctx.stroke();
 
-    // Right leaf
     const rx = 48 - Math.cos(ang) * 12;
     const ry = Math.sin(ang) * 32;
     ctx.beginPath();
@@ -201,8 +109,8 @@ function drawAcademicCrest(ctx, cx, cy, isPrep) {
   ctx.restore();
 }
 
-// Draw metallic scalloped seal with ribbons
-function drawMetallicSealWithRibbons(ctx, cx, cy, isPrep, grade) {
+// Draw clean official Olympiad seal with ribbon tails
+function drawOfficialOlympiadSeal(ctx, cx, cy, isPrep, grade) {
   ctx.save();
 
   // Ribbon tails hanging down
@@ -294,7 +202,7 @@ function drawMetallicSealWithRibbons(ctx, cx, cy, isPrep, grade) {
 }
 
 /**
- * Main function: Renders the upgraded certificate to canvas
+ * Main function: Renders the clean, authentic certificate to canvas
  */
 export function drawCertificateToCanvas(canvas, result) {
   const width = 2000;
@@ -308,43 +216,43 @@ export function drawCertificateToCanvas(canvas, result) {
   const pct = result.percentage || 0;
 
   // Determine honor level badge
-  let honorTitle = 'CERTIFICATE OF SCHOLASTIC ACHIEVEMENT';
+  let honorTitle = 'CERTIFICATE OF ACHIEVEMENT';
   let honorBadge = '★ SCHOLASTIC COMMENDATION ★';
   let honorBg = '#FEF3C7';
   let honorFg = '#92400E';
 
   if (isPrep) {
-    honorTitle = 'CERTIFICATE OF PREPARATORY MASTERY';
+    honorTitle = 'CERTIFICATE OF PREPARATION';
     if (pct >= 90) {
-      honorBadge = '★ PREPARATORY GOLD READINESS DISTINCTION ★';
+      honorBadge = '★ GOLD PREPARATORY DISTINCTION ★';
     } else if (pct >= 75) {
-      honorBadge = '★ PREPARATORY SILVER PROFICIENCY ★';
+      honorBadge = '★ SILVER PREPARATORY COMMENDATION ★';
     } else {
-      honorBadge = '★ PREPARATORY COMPLETION & MERIT ★';
+      honorBadge = '★ PREPARATORY COMPLETION ★';
     }
     honorBg = '#E0F2FE';
     honorFg = '#0369A1';
   } else {
     if (pct >= 90) {
-      honorBadge = '★ NATIONAL GOLD DISTINCTION & MERIT ★';
+      honorBadge = '★ GOLD MEDALIST DISTINCTION ★';
       honorBg = '#FEF3C7';
       honorFg = '#78350F';
     } else if (pct >= 75) {
-      honorBadge = '★ SCHOLASTIC SILVER COMMENDATION ★';
+      honorBadge = '★ SILVER MERIT COMMENDATION ★';
       honorBg = '#F1F5F9';
       honorFg = '#1E293B';
     } else if (pct >= 60) {
-      honorBadge = '★ BRONZE HONORS & COMMENDATION ★';
+      honorBadge = '★ BRONZE COMMENDATION ★';
       honorBg = '#FFEDD5';
       honorFg = '#9A3412';
     } else {
-      honorBadge = '★ CERTIFICATE OF PARTICIPATION & MERIT ★';
+      honorBadge = '★ CERTIFICATE OF PARTICIPATION ★';
       honorBg = '#F3F4F6';
       honorFg = '#374151';
     }
   }
 
-  // 1. Rich parchment radial gradient background
+  // 1. Parchment radial background
   const bgGrad = ctx.createRadialGradient(
     width / 2,
     height / 2,
@@ -359,9 +267,9 @@ export function drawCertificateToCanvas(canvas, result) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // 2. Guilloche Security Rosette Watermark in Center (opacity 0.045)
+  // 2. Subtle Guilloche rosette pattern (soft opacity)
   ctx.save();
-  ctx.globalAlpha = 0.045;
+  ctx.globalAlpha = 0.04;
   ctx.strokeStyle = isPrep ? '#0284C7' : '#92400E';
   ctx.lineWidth = 1.2;
   const cx = width / 2;
@@ -384,12 +292,12 @@ export function drawCertificateToCanvas(canvas, result) {
   ctx.restore();
 
   // 3. Multi-tier High Security Borders
-  // Tier 1: Outer Dark Navy Frame
+  // Tier 1: Outer Navy Border
   ctx.strokeStyle = '#0C1E3A';
   ctx.lineWidth = 18;
   ctx.strokeRect(44, 44, width - 88, height - 88);
 
-  // Tier 2: Deep Gold Primary Border
+  // Tier 2: Gold Border
   const goldColor = isPrep ? '#0284C7' : '#B45309';
   ctx.strokeStyle = goldColor;
   ctx.lineWidth = 5;
@@ -406,37 +314,37 @@ export function drawCertificateToCanvas(canvas, result) {
   drawCornerOrnament(ctx, width - 84, height - 84, Math.PI);
   drawCornerOrnament(ctx, 84, height - 84, -Math.PI / 2);
 
-  // 4. Academic Crest at Top
-  drawAcademicCrest(ctx, width / 2, 160, isPrep);
+  // 4. Scholastic Olympiad Emblem
+  drawScholasticEmblem(ctx, width / 2, 165, isPrep);
 
-  // 5. Authority Arc / Board Header
+  // 5. Header
   ctx.textAlign = 'center';
   ctx.fillStyle = isPrep ? '#0369A1' : '#854D0E';
   ctx.font = '700 24px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(
-    'NATIONAL SCHOLASTIC COUNCIL FOR ACADEMIC EXCELLENCE',
+    'NATIONAL SCHOLASTIC OLYMPIAD',
     width / 2,
-    238
+    242
   );
 
   ctx.fillStyle = '#475569';
   ctx.font = '600 17px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(
-    'GOVERNING BODY FOR NATIONWIDE TALENT & SCHOLASTIC OLYMPIAD EXAMINATIONS',
+    'MULTI-SUBJECT ALL-INDIA ASSESSMENT (GRADES 3 - 10)',
     width / 2,
-    266
+    270
   );
 
   // 6. Main Certificate Title
   ctx.fillStyle = '#0C1E3A';
   ctx.font = '700 64px "Source Serif 4", Georgia, serif';
-  ctx.fillText(honorTitle, width / 2, 342);
+  ctx.fillText(honorTitle, width / 2, 344);
 
   // 7. Honors Distinction Badge Ribbon
-  const badgeW = 600;
+  const badgeW = 540;
   const badgeH = 42;
   const badgeX = width / 2 - badgeW / 2;
-  const badgeY = 368;
+  const badgeY = 370;
 
   ctx.fillStyle = honorBg;
   ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
@@ -448,47 +356,47 @@ export function drawCertificateToCanvas(canvas, result) {
   ctx.font = '700 18px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(honorBadge, width / 2, badgeY + 27);
 
-  // 8. Citation Introduction
+  // 8. Citation Intro
   ctx.fillStyle = '#475569';
   ctx.font = '500 25px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(
-    'This is to formally certify and confer scholastic recognition upon',
+    'This certificate is proudly awarded to',
     width / 2,
-    456
+    458
   );
 
-  // 9. Candidate Name in Prominent Regal Serif
+  // 9. Candidate Name
   ctx.fillStyle = '#0C1E3A';
   ctx.font = '700 68px "Source Serif 4", Georgia, serif';
-  ctx.fillText(result.student.name, width / 2, 536);
+  ctx.fillText(result.student.name, width / 2, 538);
 
-  // Name dual underline with centered diamond ornament
+  // Underline
   const nameMetric = ctx.measureText(result.student.name);
   const lineW = Math.min(1000, Math.max(500, nameMetric.width + 120));
   ctx.strokeStyle = '#0C1E3A';
   ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.moveTo(width / 2 - lineW / 2, 558);
-  ctx.lineTo(width / 2 + lineW / 2, 558);
+  ctx.moveTo(width / 2 - lineW / 2, 560);
+  ctx.lineTo(width / 2 + lineW / 2, 560);
   ctx.stroke();
 
-  // Central decorative diamond
+  // Central diamond
   ctx.fillStyle = goldColor;
   ctx.beginPath();
-  ctx.moveTo(width / 2, 550);
-  ctx.lineTo(width / 2 + 8, 558);
-  ctx.lineTo(width / 2, 566);
-  ctx.lineTo(width / 2 - 8, 558);
+  ctx.moveTo(width / 2, 552);
+  ctx.lineTo(width / 2 + 8, 560);
+  ctx.lineTo(width / 2, 568);
+  ctx.lineTo(width / 2 - 8, 560);
   ctx.closePath();
   ctx.fill();
 
-  // 10. Grade, School & Candidate Identification
+  // 10. Grade and School
   ctx.fillStyle = '#1E293B';
   ctx.font = '600 27px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(
     `Grade ${result.student.grade}   •   ${result.student.school}`,
     width / 2,
-    608
+    610
   );
 
   // 11. Proclamation Paragraph
@@ -496,59 +404,57 @@ export function drawCertificateToCanvas(canvas, result) {
   ctx.font = '400 23px "Plus Jakarta Sans", system-ui, sans-serif';
   if (isPrep) {
     ctx.fillText(
-      'for the successful completion of the rigorous 120-Question Untimed Preparatory Curriculum,',
+      'for completing the 120-Question Untimed Olympiad Preparatory Curriculum,',
       width / 2,
-      660
+      664
     );
     ctx.fillText(
-      'mastering 30 comprehensive questions across English, Science, Social Studies, and Mathematics',
+      'featuring 30 questions each in English, Science, Social Studies, and Mathematics',
       width / 2,
-      694
+      698
     );
     ctx.fillText(
-      'supported by interactive Antigravity Gemini AI conceptual diagnostics and performance feedback.',
+      'with Antigravity Gemini AI interactive conceptual diagnostics and review.',
       width / 2,
-      728
+      732
     );
   } else {
     ctx.fillText(
-      'for appearing in and successfully completing the National Scholastic Multi-Subject Olympiad Examination,',
+      'for successfully completing the 80-Question Timed Multi-Subject Olympiad Examination,',
       width / 2,
-      660
+      664
     );
     ctx.fillText(
-      'comprising 80 evaluated questions across English, Science, Social Studies (SST), and Mathematics',
+      'demonstrating scholastic excellence in English, Science, Social Studies (SST), and Mathematics',
       width / 2,
-      694
+      698
     );
     ctx.fillText(
-      'administered under strict timed conditions (80 minutes) with comprehensive post-examination AI review.',
+      'conducted under standard national examination rules with post-examination diagnostic review.',
       width / 2,
-      728
+      732
     );
   }
 
   // 12. Score & Subject Performance Plaque
   const plaqueX = 200;
-  const plaqueY = 775;
+  const plaqueY = 780;
   const plaqueW = width - 400;
   const plaqueH = 170;
 
-  // Plaque container with soft shadow
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(plaqueX, plaqueY, plaqueW, plaqueH);
   ctx.strokeStyle = '#D1D5DB';
   ctx.lineWidth = 2;
   ctx.strokeRect(plaqueX, plaqueY, plaqueW, plaqueH);
 
-  // Inner gold trim on plaque
   ctx.strokeStyle = isPrep ? '#BAE6FD' : '#FEF3C7';
   ctx.lineWidth = 4;
   ctx.strokeRect(plaqueX + 4, plaqueY + 4, plaqueW - 8, plaqueH - 8);
 
   const stats = [
     {
-      label: 'FINAL SCORE',
+      label: 'TOTAL SCORE',
       val: `${result.correctCount} / ${result.totalQuestions}`,
       color: '#0C1E3A',
     },
@@ -608,96 +514,82 @@ export function drawCertificateToCanvas(canvas, result) {
     ctx.fillText(s.val, boxMidX, plaqueY + 114);
   });
 
-  // 13. Official Embossed Gold Wax/Foil Seal with Ribbons in Bottom Center
-  drawMetallicSealWithRibbons(ctx, width / 2, 1100, isPrep, result.student.grade);
+  // 13. Official Olympiad Seal in Bottom Center
+  drawOfficialOlympiadSeal(ctx, width / 2, 1110, isPrep, result.student.grade);
 
-  // 14. Left Signatory: Dr. Arvind K. Sharma (Academic Director)
+  // 14. Left: Clean Date of Examination
   const leftX = 220;
-  drawCursiveSignature(ctx, 'Dr. Arvind K. Sharma', leftX + 15, 1075);
-  ctx.strokeStyle = '#0C1E3A';
-  ctx.lineWidth = 1.8;
-  ctx.beginPath();
-  ctx.moveTo(leftX, 1115);
-  ctx.lineTo(leftX + 320, 1115);
-  ctx.stroke();
+  const dateStr = new Date(result.completedAt).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   ctx.textAlign = 'left';
   ctx.fillStyle = '#0C1E3A';
-  ctx.font = '700 20px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText('Dr. Arvind K. Sharma', leftX, 1144);
-  ctx.fillStyle = '#64748B';
-  ctx.font = '500 16px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText('Director General, Academic Council', leftX, 1168);
-  ctx.fillText('National Olympiad Foundation', leftX, 1190);
+  ctx.font = '700 24px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText(dateStr, leftX, 1105);
 
-  // 15. Right Signatory: Prof. Eleanor Vance (Controller of Examinations)
+  ctx.strokeStyle = '#0C1E3A';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(leftX, 1120);
+  ctx.lineTo(leftX + 320, 1120);
+  ctx.stroke();
+
+  ctx.fillStyle = '#64748B';
+  ctx.font = '600 17px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText(isPrep ? 'Date of Practice' : 'Date of Examination', leftX, 1148);
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '500 15px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText('National Scholastic Olympiad', leftX, 1172);
+
+  // 15. Right: Clean Authentic Authorized Signatory Line (no fake names or unwanted persons)
   const rightX = width - 540;
-  drawCursiveSignature(ctx, 'Prof. Eleanor Vance', rightX + 25, 1075);
+
   ctx.strokeStyle = '#0C1E3A';
   ctx.lineWidth = 1.8;
   ctx.beginPath();
-  ctx.moveTo(rightX, 1115);
-  ctx.lineTo(rightX + 320, 1115);
+  ctx.moveTo(rightX, 1120);
+  ctx.lineTo(rightX + 320, 1120);
   ctx.stroke();
 
   ctx.textAlign = 'left';
   ctx.fillStyle = '#0C1E3A';
   ctx.font = '700 20px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText('Prof. Eleanor Vance', rightX, 1144);
+  ctx.fillText('Authorized Signatory', rightX, 1148);
   ctx.fillStyle = '#64748B';
   ctx.font = '500 16px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText('Chief Controller of Examinations', rightX, 1168);
-  ctx.fillText('Scholastic Assessment Board', rightX, 1190);
+  ctx.fillText('School / Examination Authority', rightX, 1172);
 
-  // 16. Security Verification QR Matrix & Permanent Reference Token (Bottom Bar)
-  const qrX = 140;
-  const qrY = 1240;
-  const qrSize = 92;
-  drawMockQrCode(ctx, qrX, qrY, qrSize);
-
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#0C1E3A';
-  ctx.font = '700 16px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText('DIGITALLY ENCRYPTED & VERIFIED', qrX + qrSize + 18, qrY + 24);
-
+  // 16. Bottom: Official Reference ID and Verification
+  ctx.textAlign = 'center';
   ctx.fillStyle = '#64748B';
-  ctx.font = '500 15px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText(`Certificate ID: NSO-2026-${result.attemptId.toUpperCase()}`, qrX + qrSize + 18, qrY + 48);
+  ctx.font = '600 16px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(
-    `Date of Conformance: ${new Date(result.completedAt).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })}`,
-    qrX + qrSize + 18,
-    qrY + 70
-  );
-
-  // Right security watermark seal note
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#64748B';
-  ctx.font = '500 15px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText(
-    'Tamper-evident scholastic digital credential • Council for National Examinations',
-    width - 140,
+    `Certificate Reference ID: NSO-2026-${result.attemptId.toUpperCase()}`,
+    width / 2,
     1300
   );
+
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '500 14px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(
-    `Verification URL: https://scholastic-olympiad.org/verify/${result.attemptId.slice(0, 8)}`,
-    width - 140,
-    1324
+    'Official candidate credential generated for scholastic performance records.',
+    width / 2,
+    1326
   );
 }
 
 /**
- * Downloads the upgraded certificate as high-resolution PNG
+ * Downloads the clean, authentic certificate as high-resolution PNG
  */
 export function downloadCertificatePng(result) {
   const canvas = document.createElement('canvas');
   drawCertificateToCanvas(canvas, result);
   const link = document.createElement('a');
   const safeName = result.student.name.replace(/[^a-z0-9]+/gi, '_').toLowerCase();
-  const prefix = result.isPrepMode ? 'NSO_Preparatory_Diploma' : 'NSO_Official_Certificate';
+  const prefix = result.isPrepMode ? 'NSO_Preparatory_Certificate' : 'NSO_Olympiad_Certificate';
   link.download = `${prefix}_Grade${result.student.grade}_${safeName}.png`;
   link.href = canvas.toDataURL('image/png', 1.0);
   document.body.appendChild(link);
