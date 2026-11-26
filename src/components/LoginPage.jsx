@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GRADES } from '../data/questionBank';
+import { checkCloudEligibility } from '../services/supabase';
 import { validateLoginAndEligibility } from '../utils/storage';
 
 const INITIAL_FORM = {
@@ -17,6 +18,7 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [blockInfo, setBlockInfo] = useState(null);
+  const [checkingCloud, setCheckingCloud] = useState(false);
 
   // Quick-launcher state for Preparatory Mode (No login required)
   const [prepGrade, setPrepGrade] = useState('');
@@ -67,19 +69,37 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
     return next;
   }
 
-  // Official Olympiad Submit (Requires Full Login & 1-Year Rule Check)
-  function handleOfficialSubmit(e) {
+  // Official Olympiad Submit (Requires Full Login & 1-Year Rule Check in Local + Supabase DB)
+  async function handleOfficialSubmit(e) {
     e.preventDefault();
+    if (checkingCloud) return;
+
     const fieldErrors = validateOfficialFields();
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
       return;
     }
 
-    const check = validateLoginAndEligibility(form, 'official');
-    if (!check.allowed) {
-      setBlockInfo(check);
+    const localCheck = validateLoginAndEligibility(form, 'official');
+    if (!localCheck.allowed) {
+      setBlockInfo(localCheck);
       return;
+    }
+
+    setCheckingCloud(true);
+    try {
+      const cloudCheck = await checkCloudEligibility(
+        form.email,
+        form.mobile,
+        form.password,
+        form.grade
+      );
+      if (!cloudCheck.allowed) {
+        setBlockInfo(cloudCheck);
+        return;
+      }
+    } finally {
+      setCheckingCloud(false);
     }
 
     onStartExam(form, 'official');
@@ -440,8 +460,14 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
               </div>
             )}
 
-            <button type="submit" className="btn-primary submit-login-btn">
-              Login and Start 80-Minute Official Olympiad
+            <button
+              type="submit"
+              className="btn-primary submit-login-btn"
+              disabled={checkingCloud}
+            >
+              {checkingCloud
+                ? 'Verifying Eligibility in Database...'
+                : 'Login and Start 80-Minute Official Olympiad'}
             </button>
           </form>
         </section>
