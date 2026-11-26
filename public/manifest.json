@@ -1,0 +1,19 @@
+{
+  "name": "National Scholastic Olympiad",
+  "short_name": "NSO Olympiad",
+  "description": "National Scholastic Olympiad examination and Gemini AI preparatory platform for Grades 3 to 10.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#14213d",
+  "theme_color": "#14213d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "exams", "quiz"]
+}
