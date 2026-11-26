@@ -14,15 +14,16 @@ import GeminiExplanationCard from './GeminiExplanationCard';
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
 function formatDuration(totalSeconds) {
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const mins = Math.floor(safe / 60);
+  const secs = safe % 60;
   return `${mins}m ${secs}s`;
 }
 
 export default function ResultPage({ result, onReturnHome }) {
   const canvasRef = useRef(null);
   const [filter, setFilter] = useState('all');
-  const [activeGeminiId, setActiveGeminiId] = useState(null);
+  const [openGeminiIds, setOpenGeminiIds] = useState(() => new Set());
 
   const isPrep = !!result.isPrepMode;
   const activeSubjects = isPrep ? PREP_SUBJECTS : SUBJECTS;
@@ -33,9 +34,18 @@ export default function ResultPage({ result, onReturnHome }) {
       : getQuestionsForGrade(result.student.grade);
   }, [isPrep, result.student.grade]);
 
+  // Redraw certificate whenever result updates or fonts load
   useEffect(() => {
     if (canvasRef.current) {
       drawCertificateToCanvas(canvasRef.current, result);
+    }
+    // Also re-render if web fonts settle
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (canvasRef.current) {
+          drawCertificateToCanvas(canvasRef.current, result);
+        }
+      });
     }
   }, [result]);
 
@@ -64,8 +74,41 @@ export default function ResultPage({ result, onReturnHome }) {
   }, [questions, result.answers, filter]);
 
   function toggleGemini(id) {
-    setActiveGeminiId((prev) => (prev === id ? null : id));
+    setOpenGeminiIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }
+
+  function expandAllWrong() {
+    const wrongIds = new Set();
+    questions.forEach((q, idx) => {
+      const chosen = result.answers?.[idx];
+      if (chosen !== undefined && chosen !== q.answer) {
+        wrongIds.add(q.id);
+      }
+    });
+    setOpenGeminiIds(wrongIds);
+    setFilter('wrong');
+  }
+
+  function expandAllFiltered() {
+    const allFilteredIds = new Set(filteredQuestions.map((q) => q.id));
+    setOpenGeminiIds(allFilteredIds);
+  }
+
+  function collapseAll() {
+    setOpenGeminiIds(new Set());
+  }
+
+  const allFilteredOpen =
+    filteredQuestions.length > 0 &&
+    filteredQuestions.every((q) => openGeminiIds.has(q.id));
 
   return (
     <div>
@@ -78,10 +121,10 @@ export default function ResultPage({ result, onReturnHome }) {
                 : 'Olympiad Examination Result'}
             </h1>
             <p className="login-subtitle">
-              {result.student.name} | Grade {result.student.grade} |{' '}
+              Candidate: <strong>{result.student.name}</strong> | Grade {result.student.grade} |{' '}
               {result.student.school}
               {result.autoSubmitted
-                ? ' (Auto-submitted when 80-minute timer ended)'
+                ? ' (Auto-submitted when 80-minute countdown expired)'
                 : ''}
             </p>
           </div>
@@ -111,10 +154,10 @@ export default function ResultPage({ result, onReturnHome }) {
           </div>
         </div>
 
-        <p className="brand-subtitle">
-          Mode: <strong>{isPrep ? 'Preparatory Practice (Untimed, 120 Questions)' : 'Official Olympiad (80 Mins)'}</strong> |{' '}
-          Time Spent: <strong>{formatDuration(result.elapsedSeconds)}</strong> |{' '}
-          Reference ID: <strong>{result.attemptId}</strong>
+        <p className="brand-subtitle" style={{ margin: '0.85rem 0 1.25rem' }}>
+          Mode: <strong>{isPrep ? 'Preparatory Practice (Untimed, 120 Questions)' : 'Official Olympiad (Timed, 80 Questions)'}</strong> |{' '}
+          Duration: <strong>{formatDuration(result.elapsedSeconds)}</strong> |{' '}
+          Reference Credential: <strong>NSO-2026-{result.attemptId.slice(0, 10).toUpperCase()}</strong>
         </p>
 
         <table className="breakdown-table" aria-label="Subject-wise score breakdown">
@@ -143,7 +186,7 @@ export default function ResultPage({ result, onReturnHome }) {
                     <strong>{subj.label}</strong>
                     {isPrep && (
                       <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ink-muted)' }}>
-                        15 Official Test + 15 AI Practice
+                        15 Official Curriculum + 15 AI Practice
                       </span>
                     )}
                   </td>
@@ -159,16 +202,15 @@ export default function ResultPage({ result, onReturnHome }) {
         </table>
       </section>
 
+      {/* Upgraded High-Resolution Prestigious Certificate */}
       <section className="certificate-section" aria-labelledby="cert-heading">
         <div className="certificate-toolbar">
           <div>
             <h2 id="cert-heading">
-              {isPrep ? 'Preparatory Certificate of Readiness' : 'Official Certificate'}
+              {isPrep ? 'Official Certificate of Preparatory Mastery' : 'Official National Olympiad Certificate'}
             </h2>
             <p className="login-subtitle" style={{ margin: '0.2rem 0 0' }}>
-              {isPrep
-                ? 'Commemorating completion of the 120-question multi-subject preparatory curriculum.'
-                : 'Verified certificate of achievement for the National Scholastic Olympiad.'}
+              High-resolution 300 DPI diploma with academic seal, gold borders, guilloche watermark, and digital verification QR code.
             </p>
           </div>
           <div className="certificate-actions">
@@ -177,7 +219,7 @@ export default function ResultPage({ result, onReturnHome }) {
               className="btn-primary"
               onClick={() => downloadCertificatePng(result)}
             >
-              Download Certificate (PNG)
+              Download High-Res Diploma (PNG)
             </button>
             <button
               type="button"
@@ -189,35 +231,66 @@ export default function ResultPage({ result, onReturnHome }) {
           </div>
         </div>
 
-        <canvas
-          ref={canvasRef}
-          className="certificate-canvas"
-          aria-label={`Olympiad Certificate for ${result.student.name}, Grade ${result.student.grade}`}
-        />
+        <div className="certificate-canvas-wrapper">
+          <canvas
+            ref={canvasRef}
+            className="certificate-canvas"
+            aria-label={`Official Olympiad Certificate for ${result.student.name}, Grade ${result.student.grade}`}
+          />
+        </div>
       </section>
 
+      {/* End-of-Examination Gemini AI Explanation Banner */}
       <section className="review-section" aria-labelledby="review-heading">
-        <div className="review-controls">
-          <div>
-            <h2 id="review-heading">Answer Key and Antigravity Gemini AI Tutor Review</h2>
-            <p className="login-subtitle" style={{ margin: '0.2rem 0 0' }}>
-              Review your responses. Click any question to reveal why incorrect choices failed, what the right answer is, and the core concept explanation.
-            </p>
+        <div className="end-of-exam-explainer-banner">
+          <div className="explainer-banner-top">
+            <div className="explainer-banner-title">
+              <span className="explainer-badge">End-of-Examination Review</span>
+              <h2 id="review-heading" style={{ margin: '0.35rem 0 0', fontFamily: 'var(--font-serif)', fontSize: '1.45rem' }}>
+                Antigravity Gemini AI Question Diagnostic & Concept Tutor
+              </h2>
+            </div>
+            <div className="explainer-banner-actions">
+              {result.wrongCount > 0 && (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={expandAllWrong}
+                >
+                  Explain All Wrong Answers ({result.wrongCount})
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={allFilteredOpen ? collapseAll : expandAllFiltered}
+              >
+                {allFilteredOpen ? 'Collapse All Explanations' : 'Expand All in Current View'}
+              </button>
+            </div>
           </div>
+          <p className="login-subtitle" style={{ margin: '0.65rem 0 0' }}>
+            {isPrep
+              ? 'Preparatory mode completed. Review below to examine how the AI analyzes misconceptions and reinforces curriculum mastery.'
+              : 'As designed for official examination integrity, question answers and Gemini AI conceptual explanations are revealed here at the conclusion of your test. For each question, discover why incorrect choices failed, understand the correct answer, and review essential study takeaways.'}
+          </p>
+        </div>
+
+        <div className="review-controls">
           <div className="certificate-actions">
             <button
               type="button"
               className={filter === 'all' ? 'btn-primary' : 'btn-secondary'}
               onClick={() => setFilter('all')}
             >
-              All ({questions.length})
+              All Questions ({questions.length})
             </button>
             <button
               type="button"
               className={filter === 'wrong' ? 'btn-primary' : 'btn-secondary'}
               onClick={() => setFilter('wrong')}
             >
-              Wrong Answers ({result.wrongCount})
+              Incorrect Only ({result.wrongCount})
             </button>
             <button
               type="button"
@@ -233,7 +306,7 @@ export default function ResultPage({ result, onReturnHome }) {
                   className={filter === 'official' ? 'btn-primary' : 'btn-secondary'}
                   onClick={() => setFilter('official')}
                 >
-                  Official Test Bank (60)
+                  Curriculum Bank (60)
                 </button>
                 <button
                   type="button"
@@ -245,24 +318,27 @@ export default function ResultPage({ result, onReturnHome }) {
               </>
             )}
           </div>
+          <span className="tabular-nums" style={{ fontSize: '0.88rem', color: 'var(--ink-secondary)' }}>
+            Showing {filteredQuestions.length} of {questions.length} questions
+          </span>
         </div>
 
         {filteredQuestions.length === 0 ? (
-          <p className="login-subtitle">
-            No questions match this filter. Try switching to All Questions.
+          <p className="login-subtitle" style={{ padding: '2rem 0', textAlign: 'center' }}>
+            No questions match the selected filter. Try switching to All Questions.
           </p>
         ) : (
           <div className="review-list">
             {filteredQuestions.map((item) => {
               const isCorrect = item.chosen === item.answer;
               const isUnanswered = item.chosen === undefined;
-              const isGeminiOpen = activeGeminiId === item.id;
+              const isGeminiOpen = openGeminiIds.has(item.id);
 
               return (
                 <article key={item.id} className="review-item">
                   <div className="review-item-head">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <span>
+                      <span style={{ fontWeight: 700 }}>
                         Q{item.number} ({item.subject})
                       </span>
                       {item.source && (
@@ -288,8 +364,8 @@ export default function ResultPage({ result, onReturnHome }) {
                         {isUnanswered
                           ? 'Unanswered'
                           : isCorrect
-                          ? 'Correct'
-                          : 'Wrong'}
+                          ? 'Correct (+1)'
+                          : 'Incorrect (0)'}
                       </span>
                       <button
                         type="button"
@@ -297,29 +373,37 @@ export default function ResultPage({ result, onReturnHome }) {
                         onClick={() => toggleGemini(item.id)}
                         aria-expanded={isGeminiOpen}
                       >
-                        {isGeminiOpen ? 'Hide Gemini Tutor' : 'Gemini AI Explanation'}
+                        {isGeminiOpen ? 'Hide Explanation' : 'Gemini AI Explanation'}
                       </button>
                     </div>
                   </div>
 
-                  <p style={{ margin: '0 0 0.5rem', fontWeight: 600 }}>{item.q}</p>
+                  <p style={{ margin: '0 0 0.65rem', fontWeight: 600, fontSize: '1.02rem' }}>{item.q}</p>
 
-                  <p style={{ margin: '0 0 0.4rem', fontSize: '0.88rem', color: 'var(--ink-secondary)' }}>
-                    Your answer:{' '}
-                    <strong>
-                      {isUnanswered
-                        ? 'None'
-                        : `${OPTION_LETTERS[item.chosen]}. ${item.options[item.chosen]}`}
-                    </strong>{' '}
-                    | Correct answer:{' '}
-                    <strong className="status-correct">
-                      {OPTION_LETTERS[item.answer]}. {item.options[item.answer]}
-                    </strong>
-                  </p>
+                  <div className="review-options-summary">
+                    <div className="review-answer-line">
+                      <span>Your Answer:</span>
+                      <strong>
+                        {isUnanswered ? (
+                          <span style={{ color: 'var(--ink-muted)' }}>Not attempted</span>
+                        ) : (
+                          <span className={isCorrect ? 'status-correct' : 'status-wrong'}>
+                            {OPTION_LETTERS[item.chosen]}. {item.options[item.chosen]}
+                          </span>
+                        )}
+                      </strong>
+                    </div>
+                    <div className="review-answer-line">
+                      <span>Correct Answer:</span>
+                      <strong className="status-correct">
+                        {OPTION_LETTERS[item.answer]}. {item.options[item.answer]}
+                      </strong>
+                    </div>
+                  </div>
 
-                  {/* Gemini Diagnostic Card for this question */}
+                  {/* Gemini AI Diagnostic Explanation */}
                   {isGeminiOpen && (
-                    <div style={{ marginTop: '0.85rem' }}>
+                    <div style={{ marginTop: '1rem' }}>
                       <GeminiExplanationCard
                         question={item}
                         chosenIndex={item.chosen}

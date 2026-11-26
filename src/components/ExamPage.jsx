@@ -324,6 +324,16 @@ export default function ExamPage({ session, onFinishExam }) {
             </div>
           )}
 
+          {/* Official Mode Integrity Notice */}
+          {!isPrep && (
+            <div className="exam-mode-note">
+              <span className="exam-mode-note-icon">🔒</span>
+              <span>
+                Official Olympiad Examination: Answer keys and Antigravity Gemini AI explanations are sealed until your final submission and will be presented on your end-of-examination report.
+              </span>
+            </div>
+          )}
+
           <div className="question-footer">
             <div className="footer-left">
               <button
