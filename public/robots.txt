@@ -1,5 +1,5 @@
 # robots.txt for National Scholastic Olympiad
-# https://olympiad-scholastic.vercel.app
+# https://nsosjmvs.vercel.app/
 
 User-agent: *
 Allow: /
@@ -8,7 +8,7 @@ Allow: /
 Allow: /google3e03f8662a84158e.html
 Allow: /sitemap.xml
 Allow: /robots.txt
+Allow: /nso-logo.png
 
-# Host & Sitemaps
-Host: https://olympiad-scholastic.vercel.app
-Sitemap: https://olympiad-scholastic.vercel.app/sitemap.xml
+# Sitemap
+Sitemap: https://nsosjmvs.vercel.app/sitemap.xml

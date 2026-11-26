@@ -4,27 +4,9 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
-    <loc>https://olympiad-scholastic.vercel.app/</loc>
-    <lastmod>2026-11-26T12:00:00+00:00</lastmod>
+    <loc>https://nsosjmvs.vercel.app/</loc>
+    <lastmod>2026-11-26T16:30:00+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://olympiad-scholastic.vercel.app/official-olympiad</loc>
-    <lastmod>2026-11-26T12:00:00+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://olympiad-scholastic.vercel.app/preparatory-mode</loc>
-    <lastmod>2026-11-26T12:00:00+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://olympiad-scholastic.vercel.app/grades-3-to-10</loc>
-    <lastmod>2026-11-26T12:00:00+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
 </urlset>
