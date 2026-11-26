@@ -304,7 +304,7 @@ Respond concisely (2-3 sentences max) as a Grade ${grade} tutor. Answer the exac
             contents: conversationContents,
             generationConfig: {
               temperature: 0.6,
-              maxOutputTokens: 300,
+              maxOutputTokens: 900,
             },
           }),
           signal: controller.signal,

@@ -14,5 +14,10 @@
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/robots.txt",  "destination": "/robots.txt"  },
+    { "source": "/(.*)",        "destination": "/index.html"  }
   ]
 }
