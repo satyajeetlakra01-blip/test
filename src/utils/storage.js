@@ -1,3 +1,5 @@
+import { saveCandidateToCloud, saveExamResultToCloud } from '../services/supabase';
+
 const RECORDS_KEY = 'olympiad_student_records_v1';
 const ACTIVE_EXAM_KEY = 'olympiad_active_exam_v1';
 const THEME_KEY = 'olympiad_theme_v1';
@@ -170,6 +172,10 @@ export function recordExamStart(student, mode = 'official') {
   };
 
   writeJson(ACTIVE_EXAM_KEY, activeSession);
+
+  // Sync candidate registration to Supabase cloud asynchronously
+  saveCandidateToCloud(student).catch(() => {});
+
   return activeSession;
 }
 
@@ -219,5 +225,9 @@ export function completeExamSession(resultSummary) {
       writeJson(RECORDS_KEY, records);
     }
   }
+
+  // Sync final exam result and scorecard to Supabase cloud asynchronously
+  saveExamResultToCloud(resultSummary).catch(() => {});
+
   localStorage.removeItem(ACTIVE_EXAM_KEY);
 }

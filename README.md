@@ -77,7 +77,8 @@ olympiad-app/
 │   │   ├── prepMathsQuestions.js
 │   │   └── questionBank.js
 │   ├── services/
-│   │   └── geminiExplainer.js # Gemini AI reasoning bridge
+│   │   ├── geminiExplainer.js # Gemini AI reasoning bridge
+│   │   └── supabase.js        # Supabase cloud database client
 │   ├── utils/
 │   │   ├── certificate.js     # Upgraded Canvas certificate generator
 │   │   └── storage.js         # LocalStorage & cooldown manager
@@ -86,6 +87,52 @@ olympiad-app/
 │   └── main.jsx
 ├── vite.config.js          # Vite configuration with /api/gemini-explain bridge
 └── package.json
+```
+
+---
+
+### Database Configuration (Supabase)
+
+The platform supports local-first persistence with seamless Supabase cloud synchronization for candidate registrations, 1-year cooldown tracking, and exam scorecards.
+
+To enable Supabase cloud sync:
+1. Copy `.env.example` to `.env`.
+2. Add your Supabase project URL (`VITE_SUPABASE_URL=https://<your-project-id>.supabase.co`).
+3. Set your publishable key (`VITE_SUPABASE_ANON_KEY=sb_publishable_...`).
+4. Run the following in your Supabase SQL Editor:
+
+```sql
+create table if not exists candidates (
+  id uuid default gen_random_uuid() primary key,
+  email text unique not null,
+  mobile text not null,
+  name text not null,
+  grade integer not null,
+  gender text,
+  school text not null,
+  password text not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table if not exists exam_results (
+  id uuid default gen_random_uuid() primary key,
+  attempt_id text not null,
+  candidate_email text not null,
+  candidate_name text not null,
+  grade integer not null,
+  school text not null,
+  mode text not null,
+  is_prep_mode boolean default false,
+  total_questions integer not null,
+  correct_count integer not null,
+  wrong_count integer not null,
+  unanswered_count integer not null,
+  percentage integer not null,
+  elapsed_seconds integer not null,
+  subject_stats jsonb,
+  auto_submitted boolean default false,
+  completed_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 ```
 
 ---
