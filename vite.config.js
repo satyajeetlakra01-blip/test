@@ -2,9 +2,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import https from 'https';
 
-const GEMINI_API_KEY =
-  process.env.VITE_GEMINI_API_KEY ||
-  'AQ.Ab8RN6JstXVAFG--0qaZoI1EtYO6LepUsO5ZkFz_-cCr0T-09w';
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.VITE_GEMINI_MODEL || 'gemini-3-flash-preview';
 
 // Server-side 15 RPM (Requests Per Minute) sliding-window rate limiter per IP

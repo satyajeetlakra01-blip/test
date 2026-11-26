@@ -1,8 +1,6 @@
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
-const GEMINI_API_KEY =
-  import.meta.env.VITE_GEMINI_API_KEY ||
-  'AQ.Ab8RN6JstXVAFG--0qaZoI1EtYO6LepUsO5ZkFz_-cCr0T-09w';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3-flash-preview';
 
 // Sliding-window client-side rate limiter: 15 Requests Per Minute (15 RPM)
