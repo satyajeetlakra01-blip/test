@@ -1,7 +1,7 @@
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
 const GEMINI_API_KEY = import.meta?.env?.VITE_GEMINI_API_KEY || '';
-const GEMINI_MODEL = import.meta?.env?.VITE_GEMINI_MODEL || 'gemini-3-flash-preview';
+const GEMINI_MODEL = import.meta?.env?.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
 
 // Sliding-window client-side rate limiter: 15 Requests Per Minute (15 RPM)
 const RATE_LIMIT_RPM = 15;
@@ -245,9 +245,9 @@ function generateClientGeminiExplanation({
 
 const CANDIDATE_MODELS = [
   'gemini-2.5-flash',
-  'gemini-flash-latest',
-  'gemini-3.8-flash',
   'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
+  'gemini-3.5-flash-lite',
 ];
 
 /**
