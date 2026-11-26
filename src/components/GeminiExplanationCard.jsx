@@ -76,6 +76,7 @@ export default function GeminiExplanationCard({
         correctIndex: correctIndex !== undefined ? correctIndex : question.answer,
         subject: question.subject,
         grade,
+        curatedExplanation: question.explanation,
         history: chatMessages,
         message: text,
       });

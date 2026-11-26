@@ -254,6 +254,7 @@ export async function chatWithGemini({
   correctIndex,
   subject,
   grade,
+  curatedExplanation,
   history = [],
   message,
 }) {
@@ -288,7 +289,7 @@ Correct Answer: ${correctOptionText}
 
 Student asks: "${message}"
 
-Please respond as a supportive, world-class Google Gemini AI Olympiad Tutor for a Grade ${grade} student. Explain clearly, encouragingly, and concisely (under 120 words).`
+Respond concisely (2-3 sentences max) as a Grade ${grade} tutor. Answer the exact question asked without filler.`
           : message;
 
       conversationContents.push({
@@ -305,7 +306,7 @@ Please respond as a supportive, world-class Google Gemini AI Olympiad Tutor for 
             contents: conversationContents,
             generationConfig: {
               temperature: 0.6,
-              maxOutputTokens: 400,
+              maxOutputTokens: 300,
             },
           }),
           signal: controller.signal,
@@ -329,9 +330,13 @@ Please respond as a supportive, world-class Google Gemini AI Olympiad Tutor for 
     }
   }
 
-  // 2. Intelligent Pedagogical Fallback Response
+  // 2. Concise Question-Specific Fallback Response
   return generateClientChatReply({
+    question,
+    options,
+    correctIndex,
     correctOptionText,
+    curatedExplanation,
     subject,
     grade,
     message,
@@ -340,8 +345,21 @@ Please respond as a supportive, world-class Google Gemini AI Olympiad Tutor for 
   });
 }
 
+const CONCEPT_GLOSSARY = {
+  personification: 'Personification gives human traits or actions to non-human objects (e.g., "The wind whispered").',
+  metaphor: 'A metaphor directly compares two unrelated things without using "like" or "as" (e.g., "The classroom was a zoo").',
+  simile: 'A simile compares two things using "like" or "as" (e.g., "brave as a lion").',
+  alliteration: 'Alliteration repeats the same starting consonant sound in nearby words (e.g., "Peter Piper picked").',
+  hyperbole: 'Hyperbole is an extreme exaggeration not meant literally (e.g., "I waited a million years").',
+  onomatopoeia: 'Onomatopoeia uses words that imitate natural sounds (e.g., "buzz", "bang", "splash").',
+};
+
 function generateClientChatReply({
+  question,
+  options,
+  correctIndex,
   correctOptionText,
+  curatedExplanation,
   subject,
   grade,
   message,
@@ -349,22 +367,41 @@ function generateClientChatReply({
   retryAfterSec,
 }) {
   const lower = message.toLowerCase();
+  const matchedOption = options?.find((opt) => lower.includes(opt.toLowerCase()));
+  const glossaryKey = Object.keys(CONCEPT_GLOSSARY).find((k) => lower.includes(k));
 
   let reply = '';
-  if (lower.includes('simpler') || lower.includes('simple') || lower.includes('easy')) {
-    reply = `In simpler terms for Grade ${grade}: Think of this question as finding the single rule that matches best. The right answer is ${correctOptionText}. Always break the question down into two parts: what is given, and what is asked. Once you isolate the keywords, the other options can be easily eliminated!`;
+
+  if (glossaryKey) {
+    const def = CONCEPT_GLOSSARY[glossaryKey];
+    const isCorrectTerm =
+      options && correctIndex !== undefined && options[correctIndex]?.toLowerCase().includes(glossaryKey);
+    reply = isCorrectTerm
+      ? `${def} That is why ${correctOptionText} fits this question.`
+      : `${def} That does not match this question ("${question}"), which is why ${correctOptionText} is right instead.`;
+  } else if (matchedOption) {
+    const isRight = options[correctIndex]?.toLowerCase() === matchedOption.toLowerCase();
+    reply = isRight
+      ? `"${matchedOption}" is correct here. ${curatedExplanation || `It directly satisfies the question "${question}".`}`
+      : `"${matchedOption}" is a distractor and does not fit "${question}". ${curatedExplanation || `The correct answer is ${correctOptionText}.`}`;
+  } else if (lower.includes('simpler') || lower.includes('simple') || lower.includes('easy')) {
+    reply = curatedExplanation
+      ? `Simply put: ${curatedExplanation} So ${correctOptionText} is right.`
+      : `Simply put, ${correctOptionText} is the only choice that directly answers "${question}".`;
   } else if (lower.includes('example') || lower.includes('another')) {
-    reply = `Here is another quick example related to this ${subject} concept: If this rule comes up again in an Olympiad problem, check if the condition changes when values are doubled or reversed. Remembering ${correctOptionText} will give you an instant clue!`;
+    reply = `Quick example: In ${subject} (Grade ${grade}), look for the exact rule behind ${correctOptionText} and match keywords from "${question}".`;
   } else if (lower.includes('why') && (lower.includes('wrong') || lower.includes('fail') || lower.includes('other'))) {
-    reply = `The other choices are 'distractors' designed to test if you know the exact definition. They often sound true in everyday life, but in ${subject}, only ${correctOptionText} meets all the formal rules of the question.`;
+    reply = `The other options miss a key condition of "${question}". ${curatedExplanation || `Only ${correctOptionText} satisfies the rule.`}`;
   } else if (lower.includes('formula') || lower.includes('rule') || lower.includes('shortcut') || lower.includes('trick')) {
-    reply = `Key Olympiad Trick: Read the final sentence first to know exactly what is being asked (e.g. 'which of the following is NOT true'). That stops you from falling into common trap answers and points you straight to ${correctOptionText}!`;
+    reply = `Shortcut: Match the main keyword in "${question}" directly to ${correctOptionText} and eliminate any option that contradicts it.`;
   } else {
-    reply = `Great question! In ${subject} for Grade ${grade}, mastering this concept comes down to understanding why ${correctOptionText} is the correct foundation. Notice how the problem sets up the conditions. Whenever you see a similar question, test each option against the fundamental principle before finalizing your answer!`;
+    reply = curatedExplanation
+      ? `${curatedExplanation} (Answer: ${correctOptionText})`
+      : `For "${question}", the key rule points directly to ${correctOptionText}.`;
   }
 
   if (rateLimited) {
-    reply += `\n\n[Note: 15 RPM API limit reached — using instant offline tutor. Live Gemini AI resets in ${retryAfterSec}s.]`;
+    reply += ` (15 RPM limit reached; live AI resets in ${retryAfterSec}s.)`;
   }
 
   return {
