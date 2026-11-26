@@ -1,0 +1,14 @@
+# robots.txt for National Scholastic Olympiad
+# https://olympiad-scholastic.vercel.app
+
+User-agent: *
+Allow: /
+
+# Priority Crawl
+Allow: /google3e03f8662a84158e.html
+Allow: /sitemap.xml
+Allow: /robots.txt
+
+# Host & Sitemaps
+Host: https://olympiad-scholastic.vercel.app
+Sitemap: https://olympiad-scholastic.vercel.app/sitemap.xml

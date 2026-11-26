@@ -28,21 +28,29 @@ An interactive, responsive Olympiad examination and preparatory web application 
    - **Untimed & Stress-Free**: No time limit so students can practice at their own pace.
    - **In-Place Immediate Gemini AI Explanations**: As students solve questions, the Gemini AI tutor provides real-time conceptual feedback directly beneath the question.
 
-3. **Gemini AI Diagnostic Explainer Engine**:
-   - Analyzes why the candidate's chosen option is incorrect.
+3. **Gemini 3.5 Flash AI Diagnostic Engine**:
+   - Integrated live Google Gemini Flash API (`gemini-3-flash-preview` / `gemini-3.5-flash`).
+   - Analyzes why the candidate's chosen option is incorrect and points out common exam pitfalls.
    - Highlights the correct answer and explains the underlying concept step-by-step.
-   - Provides actionable study tips and connects to Antigravity Gemini CLI or built-in intelligent diagnostic engine.
+   - Provides actionable Olympiad study tips with high-speed JSON schema generation.
 
-4. **Upgraded Prestigious Certificate of Achievement**:
+4. **10/10 SEO, Crawlability & Google Search Console Verification**:
+   - **Google Search Console**: Verified via root HTML file (`google3e03f8662a84158e.html`) and HTML meta tags.
+   - **Crawl Directives**: `robots.txt` configured with priority crawl paths and sitemap references.
+   - **XML Sitemap**: `sitemap.xml` detailing multi-subject curriculum pages.
+   - **Structured Data**: Google Rich Snippet JSON-LD schemas (`schema.org/EducationalOrganization`, `schema.org/Quiz`, `schema.org/LearningResource`).
+   - **Social & Discovery**: Full OpenGraph and Twitter Card metadata.
+
+5. **Clean High-Resolution Certificate of Achievement**:
    - Ultra high-resolution (2000x1414, 300 DPI diploma ratio) canvas generation.
    - Ornate multi-tier royal navy and burnished gold borders with baroque corner fleurons.
    - Guilloche rosette geometric security watermark.
-   - Academic crest with golden faceted star and dual laurel wreaths.
-   - Honors distinction ribbons: National Gold Distinction, Scholastic Silver, Bronze Commendation.
+   - Pure scholastic emblem with golden faceted star and dual laurel wreaths.
+   - Honors distinction ribbons: Gold Medalist Distinction, Silver Commendation, Bronze Commendation.
    - Detailed subject performance plaque (English, Science, SST, Maths, Total Score, Accuracy).
-   - 36-tooth embossed metallic gold foil seal with dual swallowtail ribbon tails.
-   - Dual realistic calligraphic signatures (Director General and Controller of Examinations).
-   - Procedural 2D verification QR matrix, reference hash ID, and instant PNG download / print support.
+   - 36-tooth embossed metallic gold seal with dual swallowtail ribbon tails.
+   - Clean, official Authorized Signatory line for school / examination authority.
+   - Unique credential reference hash ID and instant PNG download / print support.
 
 ---
 
