@@ -246,7 +246,7 @@ export default function ResultPage({ result, onReturnHome }) {
             <div className="explainer-banner-title">
               <span className="explainer-badge">End-of-Examination Review</span>
               <h2 id="review-heading" style={{ margin: '0.35rem 0 0', fontFamily: 'var(--font-serif)', fontSize: '1.45rem' }}>
-                Antigravity Gemini AI Question Diagnostic & Concept Tutor
+                Google Gemini AI Question Diagnostic &amp; Concept Tutor
               </h2>
             </div>
             <div className="explainer-banner-actions">

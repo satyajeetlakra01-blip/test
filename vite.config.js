@@ -7,8 +7,46 @@ const GEMINI_API_KEY =
   'AQ.Ab8RN6JstXVAFG--0qaZoI1EtYO6LepUsO5ZkFz_-cCr0T-09w';
 const GEMINI_MODEL = process.env.VITE_GEMINI_MODEL || 'gemini-3-flash-preview';
 
+// Server-side 15 RPM (Requests Per Minute) sliding-window rate limiter per IP
+const RATE_LIMIT_RPM = 15;
+const RATE_WINDOW_MS = 60 * 1000;
+const ipRequestLog = new Map();
+
+function checkServerRateLimit(ip) {
+  const now = Date.now();
+  const timestamps = (ipRequestLog.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
+
+  if (timestamps.length >= RATE_LIMIT_RPM) {
+    const retryAfterSec = Math.max(1, Math.ceil((timestamps[0] + RATE_WINDOW_MS - now) / 1000));
+    ipRequestLog.set(ip, timestamps);
+    return { allowed: false, retryAfterSec };
+  }
+
+  timestamps.push(now);
+  ipRequestLog.set(ip, timestamps);
+  return { allowed: true, remaining: RATE_LIMIT_RPM - timestamps.length };
+}
+
 function geminiMiddleware(req, res, next) {
   if (req.method === 'POST' && req.url === '/api/gemini-explain') {
+    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'local';
+    const rateCheck = checkServerRateLimit(String(clientIp));
+
+    res.setHeader('X-RateLimit-Limit', String(RATE_LIMIT_RPM));
+    res.setHeader('X-RateLimit-Remaining', String(rateCheck.remaining ?? 0));
+
+    if (!rateCheck.allowed) {
+      res.statusCode = 429;
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Retry-After', String(rateCheck.retryAfterSec));
+      res.end(
+        JSON.stringify({
+          error: `Rate limit exceeded (15 RPM). Please retry in ${rateCheck.retryAfterSec} seconds.`,
+        })
+      );
+      return;
+    }
+
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
@@ -81,7 +119,6 @@ Return valid JSON only.`;
                 // fall through to fallback
               }
 
-              // Fallback response if API quota exceeded or network hiccup
               res.end(
                 JSON.stringify({
                   whyIncorrect: `Option ${chosenLetter} ("${chosenText}") is incorrect. This is a common distractor choice that confuses similar definitions or makes an arithmetic oversight.`,

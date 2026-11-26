@@ -5,8 +5,41 @@ const GEMINI_API_KEY =
   'AQ.Ab8RN6JstXVAFG--0qaZoI1EtYO6LepUsO5ZkFz_-cCr0T-09w';
 const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3-flash-preview';
 
+// Sliding-window client-side rate limiter: 15 Requests Per Minute (15 RPM)
+const RATE_LIMIT_RPM = 15;
+const RATE_WINDOW_MS = 60 * 1000;
+const apiRequestTimestamps = [];
+
+function consumeRateLimitSlot() {
+  const now = Date.now();
+  while (apiRequestTimestamps.length > 0 && now - apiRequestTimestamps[0] >= RATE_WINDOW_MS) {
+    apiRequestTimestamps.shift();
+  }
+
+  if (apiRequestTimestamps.length >= RATE_LIMIT_RPM) {
+    const oldest = apiRequestTimestamps[0];
+    const retryAfterSec = Math.max(1, Math.ceil((oldest + RATE_WINDOW_MS - now) / 1000));
+    return { allowed: false, retryAfterSec, remaining: 0 };
+  }
+
+  apiRequestTimestamps.push(now);
+  return { allowed: true, retryAfterSec: 0, remaining: RATE_LIMIT_RPM - apiRequestTimestamps.length };
+}
+
+export function getRateLimitStatus() {
+  const now = Date.now();
+  while (apiRequestTimestamps.length > 0 && now - apiRequestTimestamps[0] >= RATE_WINDOW_MS) {
+    apiRequestTimestamps.shift();
+  }
+  return {
+    limit: RATE_LIMIT_RPM,
+    used: apiRequestTimestamps.length,
+    remaining: Math.max(0, RATE_LIMIT_RPM - apiRequestTimestamps.length),
+  };
+}
+
 /**
- * Calls Google Gemini Flash API directly or via local server bridge.
+ * Calls Google Gemini Flash API directly or via local server bridge (15 RPM limited).
  * Returns structured pedagogical explanation:
  * 1. Why student's chosen answer is incorrect
  * 2. What the right answer is
@@ -29,13 +62,15 @@ export async function getGeminiExplanation({
   const correctLetter = OPTION_LETTERS[correctIndex];
   const correctText = options[correctIndex];
 
-  // 1. Attempt direct Gemini Flash API call (client-side or production on Vercel)
-  if (GEMINI_API_KEY) {
+  const slot = consumeRateLimitSlot();
+
+  // 1. Attempt direct Gemini Flash API call if within 15 RPM quota
+  if (GEMINI_API_KEY && slot.allowed) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 9000);
 
-      const prompt = `You are the Google Gemini Flash Academic Tutor for an Olympiad student in Grade ${grade}.
+      const prompt = `You are the Google Gemini Academic Tutor for an Olympiad student in Grade ${grade}.
 Subject: ${subject}
 Question: "${question}"
 Student chose Option ${chosenLetter} ("${chosenText}") which is INCORRECT.
@@ -77,7 +112,7 @@ Return valid JSON only.`;
               correctAnswerText: parsed.correctAnswerText || `Option ${correctLetter}: "${correctText}"`,
               conceptExplanation: parsed.conceptExplanation,
               studyTip: parsed.studyTip || 'Verify the governing rule before selecting similar options.',
-              engine: 'Google Gemini 3.5 Flash (Live API)',
+              engine: `Google Gemini 3.5 Flash (Live API • ${slot.remaining}/${RATE_LIMIT_RPM} RPM left)`,
             };
           }
         }
@@ -87,46 +122,48 @@ Return valid JSON only.`;
     }
   }
 
-  // 2. Attempt local dev proxy bridge (/api/gemini-explain)
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+  // 2. Attempt local dev proxy bridge (/api/gemini-explain) if within 15 RPM
+  if (slot.allowed) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-    const response = await fetch('/api/gemini-explain', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question,
-        options,
-        chosenIndex,
-        correctIndex,
-        chosenLetter,
-        chosenText,
-        correctLetter,
-        correctText,
-        subject,
-        grade,
-        curatedExplanation,
-      }),
-      signal: controller.signal,
-    });
+      const response = await fetch('/api/gemini-explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          options,
+          chosenIndex,
+          correctIndex,
+          chosenLetter,
+          chosenText,
+          correctLetter,
+          correctText,
+          subject,
+          grade,
+          curatedExplanation,
+        }),
+        signal: controller.signal,
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.whyIncorrect && data.conceptExplanation) {
-        return {
-          whyIncorrect: data.whyIncorrect,
-          correctAnswerText: data.correctAnswerText,
-          conceptExplanation: data.conceptExplanation,
-          studyTip: data.studyTip || 'Always verify the core rule before selecting similar-looking options in Olympiads.',
-          engine: 'Google Gemini Flash (Server Bridge)',
-        };
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.whyIncorrect && data.conceptExplanation) {
+          return {
+            whyIncorrect: data.whyIncorrect,
+            correctAnswerText: data.correctAnswerText,
+            conceptExplanation: data.conceptExplanation,
+            studyTip: data.studyTip || 'Always verify the core rule before selecting similar-looking options in Olympiads.',
+            engine: 'Google Gemini Flash (Server Bridge)',
+          };
+        }
       }
+    } catch {
+      // Continue to client-side structured synthesis
     }
-  } catch {
-    // Continue to client-side structured synthesis
   }
 
   // 3. Robust client-side structured Gemini academic synthesis
@@ -142,14 +179,13 @@ Return valid JSON only.`;
     subject,
     grade,
     curatedExplanation,
+    rateLimited: !slot.allowed,
+    retryAfterSec: slot.retryAfterSec,
   });
 }
 
 function generateClientGeminiExplanation({
-  question,
-  options,
   chosenIndex,
-  correctIndex,
   chosenLetter,
   chosenText,
   correctLetter,
@@ -157,6 +193,8 @@ function generateClientGeminiExplanation({
   subject,
   grade,
   curatedExplanation,
+  rateLimited,
+  retryAfterSec,
 }) {
   let whyIncorrect = '';
 
@@ -169,7 +207,7 @@ function generateClientGeminiExplanation({
 
   const correctAnswerText = `Option ${correctLetter}: "${correctText}"`;
 
-  let conceptExplanation = curatedExplanation
+  const conceptExplanation = curatedExplanation
     ? `${curatedExplanation} To arrive at the right answer, analyze what the question specifically requires and test each option against the foundational rule.`
     : `In ${subject} for Grade ${grade}, this question tests fundamental reasoning. The correct choice is Option ${correctLetter} ("${correctText}") because it directly adheres to standard curriculum principles.`;
 
@@ -201,6 +239,136 @@ function generateClientGeminiExplanation({
     correctAnswerText,
     conceptExplanation,
     studyTip,
-    engine: 'Google Gemini Flash',
+    engine: rateLimited
+      ? `Google Gemini Flash (15 RPM limit reached — resets in ${retryAfterSec}s)`
+      : 'Google Gemini Flash',
+  };
+}
+
+/**
+ * Interactive Chat with Google Gemini AI Tutor (15 RPM rate limited)
+ */
+export async function chatWithGemini({
+  question,
+  options,
+  correctIndex,
+  subject,
+  grade,
+  history = [],
+  message,
+}) {
+  const correctOptionText =
+    options && correctIndex !== undefined
+      ? `Option ${OPTION_LETTERS[correctIndex]}: "${options[correctIndex]}"`
+      : '';
+
+  const slot = consumeRateLimitSlot();
+
+  // 1. Try Live Gemini API call if within 15 RPM limit
+  if (GEMINI_API_KEY && slot.allowed) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const conversationContents = [];
+
+      history.forEach((h) => {
+        conversationContents.push({
+          role: h.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: h.text }],
+        });
+      });
+
+      const promptText =
+        history.length === 0
+          ? `[Olympiad Subject: ${subject}, Grade: ${grade}]
+Question: "${question}"
+Options: ${options ? options.map((o, i) => `${OPTION_LETTERS[i]}. ${o}`).join(', ') : 'N/A'}
+Correct Answer: ${correctOptionText}
+
+Student asks: "${message}"
+
+Please respond as a supportive, world-class Google Gemini AI Olympiad Tutor for a Grade ${grade} student. Explain clearly, encouragingly, and concisely (under 120 words).`
+          : message;
+
+      conversationContents.push({
+        role: 'user',
+        parts: [{ text: promptText }],
+      });
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: conversationContents,
+            generationConfig: {
+              temperature: 0.6,
+              maxOutputTokens: 400,
+            },
+          }),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const json = await response.json();
+        const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          return {
+            reply: text.trim(),
+            engine: `Google Gemini Flash (${slot.remaining}/${RATE_LIMIT_RPM} RPM left)`,
+          };
+        }
+      }
+    } catch {
+      // Fall through to smart client tutor responder
+    }
+  }
+
+  // 2. Intelligent Pedagogical Fallback Response
+  return generateClientChatReply({
+    correctOptionText,
+    subject,
+    grade,
+    message,
+    rateLimited: !slot.allowed,
+    retryAfterSec: slot.retryAfterSec,
+  });
+}
+
+function generateClientChatReply({
+  correctOptionText,
+  subject,
+  grade,
+  message,
+  rateLimited,
+  retryAfterSec,
+}) {
+  const lower = message.toLowerCase();
+
+  let reply = '';
+  if (lower.includes('simpler') || lower.includes('simple') || lower.includes('easy')) {
+    reply = `In simpler terms for Grade ${grade}: Think of this question as finding the single rule that matches best. The right answer is ${correctOptionText}. Always break the question down into two parts: what is given, and what is asked. Once you isolate the keywords, the other options can be easily eliminated!`;
+  } else if (lower.includes('example') || lower.includes('another')) {
+    reply = `Here is another quick example related to this ${subject} concept: If this rule comes up again in an Olympiad problem, check if the condition changes when values are doubled or reversed. Remembering ${correctOptionText} will give you an instant clue!`;
+  } else if (lower.includes('why') && (lower.includes('wrong') || lower.includes('fail') || lower.includes('other'))) {
+    reply = `The other choices are 'distractors' designed to test if you know the exact definition. They often sound true in everyday life, but in ${subject}, only ${correctOptionText} meets all the formal rules of the question.`;
+  } else if (lower.includes('formula') || lower.includes('rule') || lower.includes('shortcut') || lower.includes('trick')) {
+    reply = `Key Olympiad Trick: Read the final sentence first to know exactly what is being asked (e.g. 'which of the following is NOT true'). That stops you from falling into common trap answers and points you straight to ${correctOptionText}!`;
+  } else {
+    reply = `Great question! In ${subject} for Grade ${grade}, mastering this concept comes down to understanding why ${correctOptionText} is the correct foundation. Notice how the problem sets up the conditions. Whenever you see a similar question, test each option against the fundamental principle before finalizing your answer!`;
+  }
+
+  if (rateLimited) {
+    reply += `\n\n[Note: 15 RPM API limit reached — using instant offline tutor. Live Gemini AI resets in ${retryAfterSec}s.]`;
+  }
+
+  return {
+    reply,
+    engine: rateLimited ? 'Google Gemini Flash (15 RPM Rate Limited)' : 'Google Gemini Flash',
   };
 }

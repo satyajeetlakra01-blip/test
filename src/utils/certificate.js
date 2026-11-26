@@ -414,7 +414,7 @@ export function drawCertificateToCanvas(canvas, result) {
       698
     );
     ctx.fillText(
-      'with Antigravity Gemini AI interactive conceptual diagnostics and review.',
+      'with Google Gemini AI interactive conceptual diagnostics and review.',
       width / 2,
       732
     );

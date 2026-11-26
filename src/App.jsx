@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import './App.css';
 import Header from './components/Header';
-import LoginPage from './components/LoginPage';
-import ExamPage from './components/ExamPage';
-import ResultPage from './components/ResultPage';
+import SkeletonLoader from './components/SkeletonLoader';
 import {
   completeExamSession,
   getActiveExamSession,
@@ -12,47 +10,74 @@ import {
   saveTheme,
 } from './utils/storage';
 
+const LoginPage = lazy(() => import('./components/LoginPage'));
+const ExamPage = lazy(() => import('./components/ExamPage'));
+const ResultPage = lazy(() => import('./components/ResultPage'));
+
 export default function App() {
   const [theme, setTheme] = useState(() => getTheme());
   const [activeSession, setActiveSession] = useState(() => getActiveExamSession());
   const [result, setResult] = useState(null);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     saveTheme(theme);
   }, [theme]);
 
+  // Brief initial skeleton hydration state for smooth visual entry
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, []);
+
+  function triggerSkeletonTransition(callback) {
+    setIsPageLoading(true);
+    setTimeout(() => {
+      callback();
+      setIsPageLoading(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 280);
+  }
+
   function toggleTheme() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   }
 
   function handleStartExam(form, mode = 'official') {
-    const session = recordExamStart(form, mode);
-    setResult(null);
-    setActiveSession(session);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    triggerSkeletonTransition(() => {
+      const session = recordExamStart(form, mode);
+      setResult(null);
+      setActiveSession(session);
+    });
   }
 
   function handleFinishExam(resultSummary) {
-    completeExamSession(resultSummary);
-    setActiveSession(null);
-    setResult(resultSummary);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    triggerSkeletonTransition(() => {
+      completeExamSession(resultSummary);
+      setActiveSession(null);
+      setResult(resultSummary);
+    });
   }
 
   function handleViewPreviousResult(previousResult) {
-    setActiveSession(null);
-    setResult(previousResult);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    triggerSkeletonTransition(() => {
+      setActiveSession(null);
+      setResult(previousResult);
+    });
   }
 
   function handleReturnHome() {
-    setResult(null);
-    setActiveSession(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    triggerSkeletonTransition(() => {
+      setResult(null);
+      setActiveSession(null);
+    });
   }
 
   const activeCandidate = activeSession?.student || result?.student || null;
+  const currentSkeletonVariant = activeSession ? 'exam' : result ? 'result' : 'home';
 
   return (
     <div className="app-shell">
@@ -63,15 +88,21 @@ export default function App() {
       />
 
       <main className="main-content">
-        {activeSession ? (
-          <ExamPage session={activeSession} onFinishExam={handleFinishExam} />
-        ) : result ? (
-          <ResultPage result={result} onReturnHome={handleReturnHome} />
+        {isPageLoading ? (
+          <SkeletonLoader variant={currentSkeletonVariant} />
         ) : (
-          <LoginPage
-            onStartExam={handleStartExam}
-            onViewPreviousResult={handleViewPreviousResult}
-          />
+          <Suspense fallback={<SkeletonLoader variant={currentSkeletonVariant} />}>
+            {activeSession ? (
+              <ExamPage session={activeSession} onFinishExam={handleFinishExam} />
+            ) : result ? (
+              <ResultPage result={result} onReturnHome={handleReturnHome} />
+            ) : (
+              <LoginPage
+                onStartExam={handleStartExam}
+                onViewPreviousResult={handleViewPreviousResult}
+              />
+            )}
+          </Suspense>
         )}
       </main>
 

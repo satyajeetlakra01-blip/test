@@ -2,7 +2,7 @@
 
 ## National Scholastic Olympiad Platform (Grades 3 - 10)
 
-An interactive, responsive Olympiad examination and preparatory web application built with React, Vite, and Google Antigravity Gemini AI tutor.
+An interactive, responsive Olympiad examination and preparatory web application built with React, Vite, and Google Gemini AI tutor.
 
 ---
 

@@ -3,9 +3,11 @@ export default function Header({ theme, onToggleTheme, candidate }) {
     <header className="site-header">
       <div className="header-inner">
         <div className="brand-mark">
-          <div className="brand-seal" aria-hidden="true">
-            NSO
-          </div>
+          <img
+            src="/nso-logo.png"
+            alt="National Scholastic Olympiad Logo"
+            className="brand-logo-img"
+          />
           <div>
             <p className="brand-title">National Scholastic Olympiad</p>
             <p className="brand-subtitle">Grades 3 to 10 Examination Portal</p>

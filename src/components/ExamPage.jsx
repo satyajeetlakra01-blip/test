@@ -168,6 +168,10 @@ export default function ExamPage({ session, onFinishExam }) {
   }
 
   const currentQuestion = questions[currentIndex];
+  const currentSubjectMeta =
+    activeSubjects.find(
+      (s) => currentIndex >= s.start && currentIndex < s.start + s.count
+    ) || activeSubjects[0];
   const answeredCount = Object.keys(answers).length;
   const unansweredCount = questions.length - answeredCount;
   const isUrgent = !isPrep && secondsLeft !== null && secondsLeft <= 300;
@@ -324,16 +328,6 @@ export default function ExamPage({ session, onFinishExam }) {
             </div>
           )}
 
-          {/* Official Mode Integrity Notice */}
-          {!isPrep && (
-            <div className="exam-mode-note">
-              <span className="exam-mode-note-icon">🔒</span>
-              <span>
-                Official Olympiad Examination: Answer keys and Antigravity Gemini AI explanations are sealed until your final submission and will be presented on your end-of-examination report.
-              </span>
-            </div>
-          )}
-
           <div className="question-footer">
             <div className="footer-left">
               <button
@@ -384,7 +378,9 @@ export default function ExamPage({ session, onFinishExam }) {
         </section>
 
         <aside className="palette-card" aria-label="Question navigator">
-          <h3>Question Navigator</h3>
+          <h3>
+            {currentSubjectMeta.label} Navigator ({currentSubjectMeta.count})
+          </h3>
           <div className="palette-legend">
             <span className="legend-item">
               <span className="legend-swatch swatch-current" /> Current
@@ -401,27 +397,33 @@ export default function ExamPage({ session, onFinishExam }) {
           </div>
 
           <div className="palette-grid">
-            {questions.map((_, idx) => {
-              const isCurrent = idx === currentIndex;
-              const isAnswered = answers[idx] !== undefined;
-              const isMarked = marked.has(idx);
-              let cls = 'palette-num tabular-nums';
-              if (isCurrent) cls += ' current';
-              else if (isMarked) cls += ' marked';
-              else if (isAnswered) cls += ' answered';
+            {questions
+              .slice(
+                currentSubjectMeta.start,
+                currentSubjectMeta.start + currentSubjectMeta.count
+              )
+              .map((_, offset) => {
+                const idx = currentSubjectMeta.start + offset;
+                const isCurrent = idx === currentIndex;
+                const isAnswered = answers[idx] !== undefined;
+                const isMarked = marked.has(idx);
+                let cls = 'palette-num tabular-nums';
+                if (isCurrent) cls += ' current';
+                else if (isMarked) cls += ' marked';
+                else if (isAnswered) cls += ' answered';
 
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  className={cls}
-                  onClick={() => goToQuestion(idx)}
-                  aria-label={`Question ${idx + 1}${isAnswered ? ', answered' : ''}${isMarked ? ', marked for review' : ''}`}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={cls}
+                    onClick={() => goToQuestion(idx)}
+                    aria-label={`Question ${idx + 1}${isAnswered ? ', answered' : ''}${isMarked ? ', marked for review' : ''}`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
           </div>
         </aside>
       </div>
