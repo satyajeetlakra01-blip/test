@@ -34,20 +34,19 @@ export default function ResultPage({ result, onReturnHome }) {
       : getQuestionsForGrade(result.student.grade);
   }, [isPrep, result.student.grade]);
 
-  // Redraw certificate whenever result updates or fonts load
+  // Redraw certificate whenever result updates or fonts load (Official mode only)
   useEffect(() => {
-    if (canvasRef.current) {
+    if (!isPrep && canvasRef.current) {
       drawCertificateToCanvas(canvasRef.current, result);
     }
-    // Also re-render if web fonts settle
-    if (document.fonts?.ready) {
+    if (!isPrep && document.fonts?.ready) {
       document.fonts.ready.then(() => {
         if (canvasRef.current) {
           drawCertificateToCanvas(canvasRef.current, result);
         }
       });
     }
-  }, [result]);
+  }, [result, isPrep]);
 
   const filteredQuestions = useMemo(() => {
     return questions
@@ -202,43 +201,43 @@ export default function ResultPage({ result, onReturnHome }) {
         </table>
       </section>
 
-      {/* Upgraded High-Resolution Prestigious Certificate */}
-      <section className="certificate-section" aria-labelledby="cert-heading">
-        <div className="certificate-toolbar">
-          <div>
-            <h2 id="cert-heading">
-              {isPrep ? 'Official Certificate of Preparatory Mastery' : 'Official National Olympiad Certificate'}
-            </h2>
-            <p className="login-subtitle" style={{ margin: '0.2rem 0 0' }}>
-              High-resolution 300 DPI diploma with academic seal, gold borders, guilloche watermark, and digital verification QR code.
-            </p>
+      {/* Official Certificate (Official Olympiad Mode Only) */}
+      {!isPrep && (
+        <section className="certificate-section" aria-labelledby="cert-heading">
+          <div className="certificate-toolbar">
+            <div>
+              <h2 id="cert-heading">Official National Olympiad Certificate</h2>
+              <p className="login-subtitle" style={{ margin: '0.2rem 0 0' }}>
+                High-resolution 300 DPI diploma with academic seal, gold borders, guilloche watermark, and digital verification QR code.
+              </p>
+            </div>
+            <div className="certificate-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => downloadCertificatePng(result)}
+              >
+                Download High-Res Diploma (PNG)
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => window.print()}
+              >
+                Print Certificate
+              </button>
+            </div>
           </div>
-          <div className="certificate-actions">
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => downloadCertificatePng(result)}
-            >
-              Download High-Res Diploma (PNG)
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => window.print()}
-            >
-              Print Certificate
-            </button>
-          </div>
-        </div>
 
-        <div className="certificate-canvas-wrapper">
-          <canvas
-            ref={canvasRef}
-            className="certificate-canvas"
-            aria-label={`Official Olympiad Certificate for ${result.student.name}, Grade ${result.student.grade}`}
-          />
-        </div>
-      </section>
+          <div className="certificate-canvas-wrapper">
+            <canvas
+              ref={canvasRef}
+              className="certificate-canvas"
+              aria-label={`Official Olympiad Certificate for ${result.student.name}, Grade ${result.student.grade}`}
+            />
+          </div>
+        </section>
+      )}
 
       {/* End-of-Examination Gemini AI Explanation Banner */}
       <section className="review-section" aria-labelledby="review-heading">

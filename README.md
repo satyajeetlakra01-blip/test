@@ -22,10 +22,12 @@ An interactive, responsive Olympiad examination and preparatory web application 
    - **Examination Integrity & End-of-Test AI Explanations**: In official examination mode, answer keys and explanations are securely sealed during the test. Full in-depth Gemini AI diagnostic explanations are revealed at the conclusion of the test on the results page.
 
 2. **Preparatory Mode**:
+   - **Zero Friction (No Login Required)**: No registration, password, email, or mobile required. Simply choose your grade and start practicing immediately.
+   - **Focused on Learning (No Certificate Needed)**: Streamlined for pure conceptual mastery, score analytics, and Gemini AI diagnostic reviews without certificate generation.
    - **120 Questions per Grade (30 per subject)**:
      - 15 questions curated from the official curriculum pool
      - 15 supplementary AI-enhanced practice questions with rich conceptual hints
-   - **Untimed & Stress-Free**: No time limit so students can practice at their own pace.
+   - **Untimed & Unlimited**: No countdown timer, self-paced, practice as many times as you want without triggering the 1-year cooldown.
    - **In-Place Immediate Gemini AI Explanations**: As students solve questions, the Gemini AI tutor provides real-time conceptual feedback directly beneath the question.
 
 3. **Gemini 3.5 Flash AI Diagnostic Engine**:

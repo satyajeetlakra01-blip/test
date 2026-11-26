@@ -18,6 +18,11 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
   const [errors, setErrors] = useState({});
   const [blockInfo, setBlockInfo] = useState(null);
 
+  // Quick-launcher state for Preparatory Mode (No login required)
+  const [prepGrade, setPrepGrade] = useState('');
+  const [prepName, setPrepName] = useState('');
+  const [prepError, setPrepError] = useState('');
+
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -36,7 +41,7 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
     }
   }
 
-  function validateFields() {
+  function validateOfficialFields() {
     const next = {};
     if (!form.name.trim() || form.name.trim().length < 2) {
       next.name = 'Enter your full name (at least 2 characters).';
@@ -62,21 +67,43 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
     return next;
   }
 
-  function handleSubmit(e) {
+  // Official Olympiad Submit (Requires Full Login & 1-Year Rule Check)
+  function handleOfficialSubmit(e) {
     e.preventDefault();
-    const fieldErrors = validateFields();
+    const fieldErrors = validateOfficialFields();
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
       return;
     }
 
-    const check = validateLoginAndEligibility(form, mode);
+    const check = validateLoginAndEligibility(form, 'official');
     if (!check.allowed) {
       setBlockInfo(check);
       return;
     }
 
-    onStartExam(form, mode);
+    onStartExam(form, 'official');
+  }
+
+  // Preparatory Practice Start (Instant 1-Click Access - Zero Login / Zero Password)
+  function handlePrepStart(e) {
+    e.preventDefault();
+    if (!prepGrade) {
+      setPrepError('Please select your grade to begin practice.');
+      return;
+    }
+
+    const practiceStudent = {
+      name: prepName.trim() || 'Student',
+      grade: Number(prepGrade),
+      gender: 'Student',
+      mobile: '0000000000',
+      school: 'Preparatory Practice',
+      email: 'practice@olympiad.local',
+      password: '',
+    };
+
+    onStartExam(practiceStudent, 'prep');
   }
 
   const isPrep = mode === 'prep';
@@ -85,7 +112,7 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
     <div className="home-grid">
       <section className="exam-brief" aria-labelledby="olympiad-title">
         <p className="brief-kicker">
-          {isPrep ? 'Preparatory Study and Skill Building' : 'Annual Scholastic Assessment'}
+          {isPrep ? 'Preparatory Study & Skill Building' : 'Annual Scholastic Assessment'}
         </p>
         <h1 id="olympiad-title" className="brief-heading">
           {isPrep
@@ -94,8 +121,8 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
         </h1>
         <p className="brief-lead">
           {isPrep
-            ? 'Untimed preparatory practice with 30 questions per subject (120 total) combining questions from the official test and AI-generated practice bank.'
-            : 'A single 80-minute multiple-choice examination testing core reasoning across English, Science, Social Studies, and Mathematics.'}
+            ? 'Untimed self-paced practice with 30 questions per subject (120 total) combining official curriculum questions and AI practice items with instant Gemini AI reasoning.'
+            : 'A formal 80-minute multiple-choice examination testing core academic proficiency across English, Science, Social Studies, and Mathematics.'}
         </p>
 
         <div className="mode-selection-tabs" role="tablist" aria-label="Portal Mode">
@@ -117,7 +144,7 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
             onClick={() => handleModeChange('prep')}
           >
             <strong>Preparatory Mode</strong>
-            <span>120 Questions (30/subj) | Untimed | Unlimited</span>
+            <span>120 Questions | No Login Required | Unlimited</span>
           </button>
         </div>
 
@@ -156,29 +183,29 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
               <td>Multiple Choice (MCQ)</td>
             </tr>
             <tr>
-              <td>Total Examination</td>
+              <td>Total Questions</td>
               <td className="tabular-nums">{isPrep ? '120' : '80'}</td>
-              <td>{isPrep ? '50% Official Test / 50% AI Practice' : 'Official Olympiad Paper'}</td>
-              <td className="tabular-nums">{isPrep ? 'No Time Limit (Self-Paced)' : '80 Minutes'}</td>
+              <td>{isPrep ? 'Curriculum + AI Practice Bank' : 'Official Olympiad Paper'}</td>
+              <td className="tabular-nums">{isPrep ? 'No Time Limit (Untimed)' : '80 Minutes'}</td>
             </tr>
           </tbody>
         </table>
 
         <div className="rules-box">
-          <h2>{isPrep ? 'Preparatory Mode Benefits' : 'Eligibility and Examination Rules'}</h2>
+          <h2>{isPrep ? 'Preparatory Mode Features' : 'Eligibility and Examination Rules'}</h2>
           {isPrep ? (
             <ul className="rules-list">
               <li>
-                No time limit: solve each question thoughtfully without countdown anxiety.
+                <strong>No Login Required:</strong> No registration, password, or contact details needed. Simply select your class and practice immediately.
               </li>
               <li>
-                Features 30 questions per subject curated specifically for your grade level: 15 drawn from official papers and 15 generated with AI.
+                <strong>Unlimited Practice:</strong> Retake and practice as many times as you like. Does not trigger the 1-year official exam cooldown.
               </li>
               <li>
-                Includes comprehensive question explanations and step-by-step reasoning on submission.
+                <strong>No Time Limit:</strong> Solve each question at your own pace with zero countdown anxiety.
               </li>
               <li>
-                Does not trigger the 1-year lockout: you can repeat preparatory practice as many times as you want to strengthen your readiness.
+                <strong>Live Gemini AI Explanations:</strong> Instant step-by-step diagnostic reasoning for every question as you solve.
               </li>
             </ul>
           ) : (
@@ -190,184 +217,235 @@ export default function LoginPage({ onStartExam, onViewPreviousResult }) {
                 The 80-minute timer begins immediately after login. When time expires, your answers are saved and submitted automatically.
               </li>
               <li>
-                Upon submission, you receive your exact correct and wrong answer counts along with an official certificate of achievement.
+                Upon submission, you receive your verified performance scorecard and high-resolution official certificate of achievement.
               </li>
             </ul>
           )}
         </div>
       </section>
 
-      <section className="login-card" aria-labelledby="login-heading">
-        <h2 id="login-heading">
-          {isPrep ? 'Candidate Login (Preparatory Mode)' : 'Candidate Login (Official Olympiad)'}
-        </h2>
-        <p className="login-subtitle">
-          {isPrep
-            ? 'Enter your details to start the untimed 120-question practice set.'
-            : 'Enter your details to begin the 80-question timed Olympiad for your grade.'}
-        </p>
+      {/* Mode 1: Preparatory Mode - ZERO Login Form Needed */}
+      {isPrep ? (
+        <section className="login-card" aria-labelledby="prep-heading">
+          <div style={{ display: 'inline-block', padding: '0.25rem 0.65rem', backgroundColor: 'var(--accent)', color: '#fff', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.65rem' }}>
+            Instant Access • No Login Required
+          </div>
+          <h2 id="prep-heading">Start Preparatory Practice</h2>
+          <p className="login-subtitle">
+            Select your class below to begin practicing 120 untimed questions with interactive Gemini AI explanations. No account or password needed.
+          </p>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="form-grid">
+          <form onSubmit={handlePrepStart} noValidate style={{ marginTop: '1.25rem' }}>
             <div className="form-field full-width">
-              <label htmlFor="name">Student Full Name</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Your full name"
-                value={form.name}
-                onChange={handleChange}
-                autoComplete="name"
-                required
-              />
-              {errors.name && <span className="field-error">{errors.name}</span>}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="grade">Class / Grade</label>
+              <label htmlFor="prep-grade" style={{ fontWeight: 700 }}>
+                Select Class / Grade
+              </label>
               <select
-                id="grade"
-                name="grade"
-                value={form.grade}
-                onChange={handleChange}
+                id="prep-grade"
+                value={prepGrade}
+                onChange={(e) => {
+                  setPrepGrade(e.target.value);
+                  setPrepError('');
+                }}
+                style={{ padding: '0.75rem', fontSize: '1rem', borderRadius: 'var(--radius-sm)' }}
                 required
               >
-                <option value="">Select Grade</option>
+                <option value="">Choose your Grade (Grade 3 to 10)</option>
                 {GRADES.map((g) => (
                   <option key={g} value={g}>
-                    Grade {g}
+                    Grade {g} (30 English, 30 Science, 30 SST, 30 Maths)
                   </option>
                 ))}
               </select>
-              {errors.grade && <span className="field-error">{errors.grade}</span>}
+              {prepError && <span className="field-error">{prepError}</span>}
             </div>
 
-            <div className="form-field">
-              <label htmlFor="gender">Gender</label>
-              <select
-                id="gender"
-                name="gender"
-                value={form.gender}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Gender</option>
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
-                <option value="Other">Other</option>
-              </select>
-              {errors.gender && (
-                <span className="field-error">{errors.gender}</span>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="mobile">Mobile Number</label>
+            <div className="form-field full-width" style={{ marginTop: '1rem' }}>
+              <label htmlFor="prep-name">
+                Your Name <span style={{ fontWeight: 400, color: 'var(--ink-secondary)' }}>(Optional)</span>
+              </label>
               <input
-                id="mobile"
-                name="mobile"
-                type="tel"
-                inputMode="numeric"
-                maxLength={10}
-                placeholder="10-digit mobile number"
-                value={form.mobile}
-                onChange={handleChange}
-                autoComplete="tel"
-                required
-              />
-              {errors.mobile && (
-                <span className="field-error">{errors.mobile}</span>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="school">School Name</label>
-              <input
-                id="school"
-                name="school"
+                id="prep-name"
                 type="text"
-                placeholder="Your school name"
-                value={form.school}
-                onChange={handleChange}
-                required
+                placeholder="Enter your name (or leave as Student)"
+                value={prepName}
+                onChange={(e) => setPrepName(e.target.value)}
               />
-              {errors.school && (
-                <span className="field-error">{errors.school}</span>
-              )}
             </div>
 
-            <div className="form-field">
-              <label htmlFor="email">Email Address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="student@example.com"
-                value={form.email}
-                onChange={handleChange}
-                autoComplete="email"
-                required
-              />
-              {errors.email && <span className="field-error">{errors.email}</span>}
-            </div>
+            <button type="submit" className="btn-primary submit-login-btn" style={{ marginTop: '1.5rem', width: '100%', padding: '0.85rem' }}>
+              Start 120-Question Practice Now (Untimed)
+            </button>
+          </form>
+        </section>
+      ) : (
+        /* Mode 2: Official Olympiad - Formal Candidate Registration & Login */
+        <section className="login-card" aria-labelledby="login-heading">
+          <h2 id="login-heading">Candidate Registration &amp; Login</h2>
+          <p className="login-subtitle">
+            Enter your details to begin the official 80-question timed Olympiad for your grade.
+          </p>
 
-            <div className="form-field">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Minimum 6 characters"
-                value={form.password}
-                onChange={handleChange}
-                autoComplete="current-password"
-                required
-              />
-              {errors.password && (
-                <span className="field-error">{errors.password}</span>
-              )}
-            </div>
-          </div>
+          <form onSubmit={handleOfficialSubmit} noValidate>
+            <div className="form-grid">
+              <div className="form-field full-width">
+                <label htmlFor="name">Student Full Name</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Your full name"
+                  value={form.name}
+                  onChange={handleChange}
+                  autoComplete="name"
+                  required
+                />
+                {errors.name && <span className="field-error">{errors.name}</span>}
+              </div>
 
-          {blockInfo && (
-            <div className="alert-banner" role="alert">
-              <strong>
-                {blockInfo.errorType === 'COOLDOWN_ACTIVE'
-                  ? '1-Year Re-Attempt Restriction Active for Official Exam'
-                  : 'Login Verification Failed'}
-              </strong>
-              <span>{blockInfo.message}</span>
-              <div className="alert-actions" style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
-                {blockInfo.errorType === 'COOLDOWN_ACTIVE' && (
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={() => handleModeChange('prep')}
-                  >
-                    Switch to Preparatory Mode (Unlimited)
-                  </button>
+              <div className="form-field">
+                <label htmlFor="grade">Class / Grade</label>
+                <select
+                  id="grade"
+                  name="grade"
+                  value={form.grade}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Grade</option>
+                  {GRADES.map((g) => (
+                    <option key={g} value={g}>
+                      Grade {g}
+                    </option>
+                  ))}
+                </select>
+                {errors.grade && <span className="field-error">{errors.grade}</span>}
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="gender">Gender</label>
+                <select
+                  id="gender"
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+                {errors.gender && (
+                  <span className="field-error">{errors.gender}</span>
                 )}
-                {blockInfo.lastAttempt?.result && (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => onViewPreviousResult(blockInfo.lastAttempt.result)}
-                  >
-                    View Previous Result and Certificate
-                  </button>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="mobile">Mobile Number</label>
+                <input
+                  id="mobile"
+                  name="mobile"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="10-digit mobile number"
+                  value={form.mobile}
+                  onChange={handleChange}
+                  autoComplete="tel"
+                  required
+                />
+                {errors.mobile && (
+                  <span className="field-error">{errors.mobile}</span>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="school">School Name</label>
+                <input
+                  id="school"
+                  name="school"
+                  type="text"
+                  placeholder="Your school name"
+                  value={form.school}
+                  onChange={handleChange}
+                  required
+                />
+                {errors.school && (
+                  <span className="field-error">{errors.school}</span>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="email">Email Address</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="student@example.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  autoComplete="email"
+                  required
+                />
+                {errors.email && <span className="field-error">{errors.email}</span>}
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="password">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Minimum 6 characters"
+                  value={form.password}
+                  onChange={handleChange}
+                  autoComplete="current-password"
+                  required
+                />
+                {errors.password && (
+                  <span className="field-error">{errors.password}</span>
                 )}
               </div>
             </div>
-          )}
 
-          <button type="submit" className="btn-primary submit-login-btn">
-            {isPrep
-              ? 'Start 120-Question Preparatory Practice (Untimed)'
-              : 'Login and Start 80-Minute Olympiad'}
-          </button>
-        </form>
-      </section>
+            {blockInfo && (
+              <div className="alert-banner" role="alert">
+                <strong>
+                  {blockInfo.errorType === 'COOLDOWN_ACTIVE'
+                    ? '1-Year Re-Attempt Restriction Active for Official Exam'
+                    : 'Login Verification Failed'}
+                </strong>
+                <span>{blockInfo.message}</span>
+                <div className="alert-actions" style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                  {blockInfo.errorType === 'COOLDOWN_ACTIVE' && (
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => handleModeChange('prep')}
+                    >
+                      Switch to Preparatory Mode (No Login / Unlimited)
+                    </button>
+                  )}
+                  {blockInfo.lastAttempt?.result && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => onViewPreviousResult(blockInfo.lastAttempt.result)}
+                    >
+                      View Previous Result and Certificate
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary submit-login-btn">
+              Login and Start 80-Minute Official Olympiad
+            </button>
+          </form>
+        </section>
+      )}
     </div>
   );
 }
