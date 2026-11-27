@@ -284,6 +284,14 @@ export async function chatWithGemini({
       });
     });
 
+    const systemInstructionText = `You are the Google Gemini Academic Tutor for a Grade ${grade} Olympiad student (${subject}).
+Answer the student's exact doubt directly, clearly, and concisely without filler.
+Formatting rules (strictly follow):
+- NEVER use LaTeX or dollar signs ($ or $$ or \\frac or \\text or \\times).
+- Write math using clean plain Unicode symbols: ×, ÷, π, ², ³, √, ≈, and simple fractions like "Speed = Distance / Time" or "v = d / t".
+- NEVER use markdown headings (no ### or ##) or horizontal rules (no ---).
+- NEVER use raw markdown asterisks (no ** or *). Use plain sentences or simple "• " bullets.`;
+
     const promptText =
       history.length === 0
         ? `[Olympiad Subject: ${subject}, Grade: ${grade}]
@@ -293,7 +301,7 @@ Correct Answer: ${correctOptionText}
 
 Student asks: "${message}"
 
-Respond concisely and supportively (2-3 sentences max) as a Grade ${grade} academic tutor. Answer the student's exact doubt directly (for example, if they ask where something is found or why another option is wrong, explain where that substance is found and why it does not match this question). Do not use filler. Formatting rules: Do not use raw markdown asterisks (no '**'). For math, format powers and fractions clearly (e.g. '2³ / 6' or 'x²', never write '2^3/6').`
+Respond concisely (2-4 sentences or short clear bullets).`
         : message;
 
     conversationContents.push({
@@ -304,7 +312,7 @@ Respond concisely and supportively (2-3 sentences max) as a Grade ${grade} acade
     for (const modelName of CANDIDATE_MODELS) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`,
@@ -312,10 +320,13 @@ Respond concisely and supportively (2-3 sentences max) as a Grade ${grade} acade
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: systemInstructionText }],
+              },
               contents: conversationContents,
               generationConfig: {
                 temperature: 0.5,
-                maxOutputTokens: 900,
+                maxOutputTokens: 2048,
               },
             }),
             signal: controller.signal,

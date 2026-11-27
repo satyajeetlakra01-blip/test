@@ -22,12 +22,18 @@ const SUPERSCRIPT_MAP = {
 };
 
 /**
- * Transforms math notation like 2^3/6, x^2, 10^5 into clean unicode superscripts and readable fractions.
+ * Converts LaTeX expressions ($$...$$, $...$, \frac, \text, \times, \pi, etc.)
+ * and ASCII math notation (2^3/6, x^2, 10^5) into clean readable Unicode text.
  */
 export function formatMathString(text) {
   if (!text || typeof text !== 'string') return text;
 
   let s = text;
+
+  // 0. Clean LaTeX block & inline delimiters and common LaTeX commands
+  s = s.replace(/\$\$([\s\S]*?)\$\$/g, (_, inner) => cleanLatex(inner.trim()));
+  s = s.replace(/\$([^$\n]+?)\$/g, (_, inner) => cleanLatex(inner.trim()));
+  s = cleanLatex(s);
 
   // 1. Fractions containing powers: e.g. 2^3/6 -> 2³ / 6 or (x+1)^2/4 -> (x+1)² / 4
   s = s.replace(/([a-zA-Z0-9()]+)\^([0-9nx+()ab-]+)\/([a-zA-Z0-9()]+)/g, (match, base, exp, denom) => {
@@ -53,6 +59,53 @@ export function formatMathString(text) {
        .replace(/(\d+)\s*\^\s*o\b/g, '$1°'); // e.g. 45^o -> 45°
 
   return s;
+}
+
+function cleanLatex(str) {
+  if (!str) return str;
+  let out = str;
+
+  // Unwrap \text{...}, \mathrm{...}, \mathbf{...}
+  out = out.replace(/\\(?:text|mathrm|mathbf|mathit)\{([^{}]*)\}/g, '$1');
+
+  // Convert \frac{a}{b} (run twice to handle nested \text inside \frac)
+  for (let i = 0; i < 2; i++) {
+    out = out.replace(/\\d?frac\{([^{}]*)\}\{([^{}]*)\}/g, (_, num, den) => {
+      const n = num.trim();
+      const d = den.trim();
+      return `${n} / ${d}`;
+    });
+  }
+
+  // Convert \sqrt{x} -> √(x)
+  out = out.replace(/\\sqrt\{([^{}]*)\}/g, '√($1)');
+
+  // Convert braced powers ^{2} -> ^2 so the superscript pass handles them
+  out = out.replace(/\^\{([^{}]*)\}/g, '^$1');
+  // Convert braced subscripts _{i} -> i
+  out = out.replace(/_\{([^{}]*)\}/g, '$1');
+
+  // Common LaTeX symbols
+  out = out
+    .replace(/\\times\b/g, '×')
+    .replace(/\\div\b/g, '÷')
+    .replace(/\\cdot\b/g, '·')
+    .replace(/\\pm\b/g, '±')
+    .replace(/\\pi\b/g, 'π')
+    .replace(/\\theta\b/g, 'θ')
+    .replace(/\\alpha\b/g, 'α')
+    .replace(/\\beta\b/g, 'β')
+    .replace(/\\Delta\b/g, 'Δ')
+    .replace(/\\delta\b/g, 'δ')
+    .replace(/\\leq\b/g, '≤')
+    .replace(/\\geq\b/g, '≥')
+    .replace(/\\neq\b/g, '≠')
+    .replace(/\\approx\b/g, '≈')
+    .replace(/\\infty\b/g, '∞')
+    .replace(/\\degree\b/g, '°')
+    .replace(/\\%/g, '%');
+
+  return out;
 }
 
 /**

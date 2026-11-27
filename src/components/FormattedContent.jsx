@@ -11,7 +11,9 @@ export default function FormattedContent({ content, className = '' }) {
   if (!content) return null;
 
   const rawText = String(content);
-  const lines = rawText.split('\n');
+  // Merge orphan bullet lines (e.g. "•\nText") so bullets never sit alone on a line
+  const normalizedText = rawText.replace(/^([*\-•])\s*\n+\s*/gm, '$1 ');
+  const lines = normalizedText.split('\n');
 
   return (
     <div className={`formatted-ai-content ${className}`}>
@@ -21,11 +23,37 @@ export default function FormattedContent({ content, className = '' }) {
           return <div key={lineIdx} className="ai-spacer" style={{ height: '0.35rem' }} />;
         }
 
+        // Horizontal rule: --- or ***
+        if (/^[-*_]{3,}$/.test(trimmed)) {
+          return (
+            <hr
+              key={lineIdx}
+              className="ai-divider"
+              style={{ border: 'none', borderTop: '1px solid var(--border-light, rgba(148,163,184,0.25))', margin: '0.55rem 0' }}
+            />
+          );
+        }
+
+        // Markdown headings: ### Heading -> clean styled heading
+        const headingMatch = trimmed.match(/^#{1,6}\s+(.+)$/);
+        if (headingMatch) {
+          const headingText = formatMathString(headingMatch[1]);
+          return (
+            <div
+              key={lineIdx}
+              className="ai-heading"
+              style={{ fontWeight: 700, fontSize: '0.96rem', margin: '0.5rem 0 0.25rem', lineHeight: 1.4 }}
+            >
+              {parseInlineMarkdown(headingText)}
+            </div>
+          );
+        }
+
         // Bullet point detection: * item or - item or • item
         const isBullet = /^[*\-•]\s+/.test(trimmed);
         const lineContent = isBullet ? trimmed.replace(/^[*\-•]\s+/, '') : trimmed;
 
-        // Apply math formatting first (2^3/6 -> 2³ / 6, x^2 -> x²)
+        // Apply math formatting first (2^3/6 -> 2³ / 6, x^2 -> x², LaTeX -> Unicode)
         const mathProcessed = formatMathString(lineContent);
 
         // Parse bold **text** and italics *text*
