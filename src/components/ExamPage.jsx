@@ -6,6 +6,7 @@ import {
   SUBJECTS,
 } from '../data/questionBank';
 import { updateActiveExamSession } from '../utils/storage';
+import { formatMathString } from '../utils/mathFormatter';
 import GeminiExplanationCard from './GeminiExplanationCard';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
@@ -289,7 +290,7 @@ export default function ExamPage({ session, onFinishExam }) {
             )}
           </div>
 
-          <h1 className="q-prompt">{currentQuestion.q}</h1>
+          <h1 className="q-prompt">{formatMathString(currentQuestion.q)}</h1>
 
           <div className="options-list" role="radiogroup" aria-labelledby="question-heading">
             {currentQuestion.options.map((opt, idx) => {
@@ -309,7 +310,7 @@ export default function ExamPage({ session, onFinishExam }) {
                     onChange={() => selectOption(idx)}
                   />
                   <span className="option-key">{OPTION_LETTERS[idx]}.</span>
-                  <span>{opt}</span>
+                  <span>{formatMathString(opt)}</span>
                 </label>
               );
             })}

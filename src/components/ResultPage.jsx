@@ -9,6 +9,7 @@ import {
   downloadCertificatePng,
   drawCertificateToCanvas,
 } from '../utils/certificate';
+import { formatMathString } from '../utils/mathFormatter';
 import GeminiExplanationCard from './GeminiExplanationCard';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
@@ -377,7 +378,9 @@ export default function ResultPage({ result, onReturnHome }) {
                     </div>
                   </div>
 
-                  <p style={{ margin: '0 0 0.65rem', fontWeight: 600, fontSize: '1.02rem' }}>{item.q}</p>
+                  <p style={{ margin: '0 0 0.65rem', fontWeight: 600, fontSize: '1.02rem' }}>
+                    {formatMathString(item.q)}
+                  </p>
 
                   <div className="review-options-summary">
                     <div className="review-answer-line">
@@ -387,7 +390,7 @@ export default function ResultPage({ result, onReturnHome }) {
                           <span style={{ color: 'var(--ink-muted)' }}>Not attempted</span>
                         ) : (
                           <span className={isCorrect ? 'status-correct' : 'status-wrong'}>
-                            {OPTION_LETTERS[item.chosen]}. {item.options[item.chosen]}
+                            {OPTION_LETTERS[item.chosen]}. {formatMathString(item.options[item.chosen])}
                           </span>
                         )}
                       </strong>
@@ -395,7 +398,7 @@ export default function ResultPage({ result, onReturnHome }) {
                     <div className="review-answer-line">
                       <span>Correct Answer:</span>
                       <strong className="status-correct">
-                        {OPTION_LETTERS[item.answer]}. {item.options[item.answer]}
+                        {OPTION_LETTERS[item.answer]}. {formatMathString(item.options[item.answer])}
                       </strong>
                     </div>
                   </div>

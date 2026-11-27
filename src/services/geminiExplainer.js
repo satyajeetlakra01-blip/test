@@ -1,3 +1,5 @@
+import { formatMathString } from '../utils/mathFormatter';
+
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
 const GEMINI_API_KEY = import.meta?.env?.VITE_GEMINI_API_KEY || '';
@@ -74,6 +76,7 @@ Question: "${question}"
 Student chose Option ${chosenLetter} ("${chosenText}") which is INCORRECT.
 The correct answer is Option ${correctLetter} ("${correctText}").
 Context note: ${curatedExplanation || 'Curriculum core concept'}
+Formatting rules: Do not use raw markdown asterisks (no '**'). For math, write powers and fractions clearly (e.g. '2³ / 6' or 'x²', never write '2^3/6').
 Provide a concise, encouraging, and accurate diagnostic explanation in JSON format with exactly four string keys:
 1. "whyIncorrect": explain clearly why Option ${chosenLetter} is wrong and the common pitfall behind selecting it.
 2. "correctAnswerText": "Option ${correctLetter} (${correctText})"
@@ -290,7 +293,7 @@ Correct Answer: ${correctOptionText}
 
 Student asks: "${message}"
 
-Respond concisely and supportively (2-3 sentences max) as a Grade ${grade} academic tutor. Answer the student's exact doubt directly (for example, if they ask where something is found or why another option is wrong, explain where that substance is found and why it does not match this question). Do not use filler.`
+Respond concisely and supportively (2-3 sentences max) as a Grade ${grade} academic tutor. Answer the student's exact doubt directly (for example, if they ask where something is found or why another option is wrong, explain where that substance is found and why it does not match this question). Do not use filler. Formatting rules: Do not use raw markdown asterisks (no '**'). For math, format powers and fractions clearly (e.g. '2³ / 6' or 'x²', never write '2^3/6').`
         : message;
 
     conversationContents.push({
@@ -326,7 +329,7 @@ Respond concisely and supportively (2-3 sentences max) as a Grade ${grade} acade
           const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text) {
             return {
-              reply: text.trim(),
+              reply: formatMathString(text.trim()),
               engine: `Google Gemini Flash (${slot.remaining}/${RATE_LIMIT_RPM} RPM left)`,
             };
           }
@@ -616,7 +619,7 @@ function generateClientChatReply({
   }
 
   return {
-    reply,
+    reply: formatMathString(reply),
     engine: rateLimited ? 'Google Gemini AI Tutor (Offline Knowledge Engine)' : 'Google Gemini AI Tutor',
   };
 }

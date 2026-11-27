@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getGeminiExplanation, chatWithGemini } from '../services/geminiExplainer';
+import FormattedContent from './FormattedContent';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -29,9 +30,13 @@ export default function GeminiExplanationCard({
 
   useEffect(() => {
     let isCurrent = true;
-    setLoading(true);
-    setChatMessages([]);
-    setInputMessage('');
+    Promise.resolve().then(() => {
+      if (isCurrent) {
+        setLoading(true);
+        setChatMessages([]);
+        setInputMessage('');
+      }
+    });
 
     getGeminiExplanation({
       question: question.q,
@@ -178,28 +183,29 @@ export default function GeminiExplanationCard({
                 <p className="gemini-chosen-ref">
                   Your selection: <strong>Option {chosenLetter} ({chosenText})</strong>
                 </p>
-                <p className="gemini-feedback-text">{data.whyIncorrect}</p>
+                <FormattedContent content={data.whyIncorrect} className="gemini-feedback-text" />
               </div>
 
               <div className="gemini-section right-answer">
                 <h4 className="gemini-section-title">
                   <span className="gemini-icon" aria-hidden="true">✓</span> The Correct Answer
                 </h4>
-                <p className="gemini-correct-callout">
-                  <strong>{data.correctAnswerText}</strong>
-                </p>
+                <div className="gemini-correct-callout">
+                  <FormattedContent content={data.correctAnswerText} />
+                </div>
               </div>
 
               <div className="gemini-section concept-deepdive">
                 <h4 className="gemini-section-title">
                   <span className="gemini-icon" aria-hidden="true">💡</span> Concept Explanation
                 </h4>
-                <p className="gemini-concept-text">{data.conceptExplanation}</p>
+                <FormattedContent content={data.conceptExplanation} className="gemini-concept-text" />
               </div>
 
               {data.studyTip && (
                 <div className="gemini-section study-tip">
-                  <strong>Olympiad Pro-Tip:</strong> {data.studyTip}
+                  <strong>Olympiad Pro-Tip:</strong>{' '}
+                  <FormattedContent content={data.studyTip} />
                 </div>
               )}
 
@@ -260,7 +266,9 @@ export default function GeminiExplanationCard({
                       <div className="chat-bubble-author">
                         {msg.sender === 'user' ? 'You' : '✦ Gemini AI Tutor'}
                       </div>
-                      <div className="chat-bubble-text">{msg.text}</div>
+                      <div className="chat-bubble-text">
+                        <FormattedContent content={msg.text} />
+                      </div>
                     </div>
                   ))
                 )}
