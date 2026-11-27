@@ -44,8 +44,14 @@ export default function ExamPage({ session, onFinishExam }) {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [showGeminiExplain, setShowGeminiExplain] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState(session.tabSwitchCount || 0);
+  const [tabWarningModal, setTabWarningModal] = useState(false);
 
+  const MAX_TAB_WARNINGS = 3;
   const submittedRef = useRef(false);
+  const lastSwitchAtRef = useRef(0);
+  const tabSwitchCountRef = useRef(session.tabSwitchCount || 0);
+  const finalizeExamRef = useRef(null);
 
   function finalizeExam(autoSubmitted = false) {
     if (submittedRef.current) return;
@@ -99,12 +105,54 @@ export default function ExamPage({ session, onFinishExam }) {
       subjectStats,
       answers,
       autoSubmitted,
+      tabSwitchCount: tabSwitchCountRef.current,
       elapsedSeconds: elapsed,
       completedAt: Date.now(),
     };
 
     onFinishExam(resultSummary);
   }
+
+  finalizeExamRef.current = finalizeExam;
+
+  // Anti-tab switch & window focus detection
+  useEffect(() => {
+    const handleViolation = () => {
+      if (submittedRef.current) return;
+      const now = Date.now();
+      // Debounce so simultaneous visibilitychange + blur only count once
+      if (now - lastSwitchAtRef.current < 500) return;
+      lastSwitchAtRef.current = now;
+
+      const nextCount = tabSwitchCountRef.current + 1;
+      tabSwitchCountRef.current = nextCount;
+      setTabSwitchCount(nextCount);
+      updateActiveExamSession({ tabSwitchCount: nextCount });
+
+      if (!isPrep && nextCount >= MAX_TAB_WARNINGS) {
+        finalizeExamRef.current?.(true);
+      } else {
+        setTabWarningModal(true);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        handleViolation();
+      }
+    };
+
+    const onWindowBlur = () => {
+      handleViolation();
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onWindowBlur);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('blur', onWindowBlur);
+    };
+  }, [isPrep]);
 
   // Timer effect: countdown for official exam, elapsed tracking for prep mode
   useEffect(() => {
@@ -203,6 +251,18 @@ export default function ExamPage({ session, onFinishExam }) {
           <span className="tabular-nums">
             Answered: <strong>{answeredCount}</strong> / {questions.length}
           </span>
+          {!isPrep && (
+            <span
+              className="tabular-nums"
+              style={{
+                color: tabSwitchCount > 0 ? 'var(--danger, #dc2626)' : 'inherit',
+                fontWeight: tabSwitchCount > 0 ? 700 : 500,
+              }}
+              title="Switching tabs or leaving the exam window 3 times will auto-submit your exam"
+            >
+              Tab Warnings: <strong>{tabSwitchCount}</strong> / {MAX_TAB_WARNINGS}
+            </span>
+          )}
         </div>
 
         <div className="timer-group">
@@ -475,6 +535,35 @@ export default function ExamPage({ session, onFinishExam }) {
                 onClick={() => finalizeExam(false)}
               >
                 {isPrep ? 'Confirm and View Results' : 'Confirm and Submit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tabWarningModal && (
+        <div
+          className="modal-backdrop"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="tab-warning-title"
+        >
+          <div className="modal-dialog">
+            <h2 id="tab-warning-title" style={{ color: 'var(--danger, #dc2626)' }}>
+              {isPrep ? 'Tab Switch Detected (Practice Notice)' : `Proctoring Warning (${tabSwitchCount} / ${MAX_TAB_WARNINGS})`}
+            </h2>
+            <p>
+              {isPrep
+                ? `You switched away from the exam tab (${tabSwitchCount} time${tabSwitchCount === 1 ? '' : 's'}). In Official Olympiad mode, switching tabs or leaving the window ${MAX_TAB_WARNINGS} times automatically submits your exam.`
+                : `Switching tabs or leaving the exam window is not permitted during the Official Olympiad. You have ${MAX_TAB_WARNINGS - tabSwitchCount} warning${MAX_TAB_WARNINGS - tabSwitchCount === 1 ? '' : 's'} remaining before your exam is automatically submitted.`}
+            </p>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setTabWarningModal(false)}
+              >
+                I Understand, Resume Exam
               </button>
             </div>
           </div>
