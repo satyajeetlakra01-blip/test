@@ -10,9 +10,27 @@ import {
   saveTheme,
 } from './utils/storage';
 
-const LoginPage = lazy(() => import('./components/LoginPage'));
-const ExamPage = lazy(() => import('./components/ExamPage'));
-const ResultPage = lazy(() => import('./components/ResultPage'));
+function lazyWithRetry(importer) {
+  return lazy(async () => {
+    const reloadKey = 'nso_chunk_reload';
+    try {
+      const mod = await importer();
+      sessionStorage.removeItem(reloadKey);
+      return mod;
+    } catch (err) {
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, '1');
+        window.location.reload();
+        return new Promise(() => {});
+      }
+      throw err;
+    }
+  });
+}
+
+const LoginPage = lazyWithRetry(() => import('./components/LoginPage'));
+const ExamPage = lazyWithRetry(() => import('./components/ExamPage'));
+const ResultPage = lazyWithRetry(() => import('./components/ResultPage'));
 
 export default function App() {
   const [theme, setTheme] = useState(() => getTheme());

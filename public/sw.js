@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nso-pwa-v1';
+const CACHE_NAME = 'nso-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -35,15 +35,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
+  const url = new URL(event.request.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  if (url.origin !== self.location.origin) return;
+
+  // Network-first for HTML/navigation so users always get the latest chunk manifest
+  if (
+    event.request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    url.pathname === '/index.html'
+  ) {
+    event.respondWith(
+      fetch(event.request)
         .then((networkResponse) => {
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            networkResponse.type === 'basic'
-          ) {
+          if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseToCache);
@@ -51,9 +56,32 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
-      return cachedResponse || fetchPromise;
+  // Cache-first for static assets; never cache HTML fallback responses for JS/CSS
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(event.request).then((networkResponse) => {
+        const contentType = networkResponse.headers.get('content-type') || '';
+        const isAsset = url.pathname.startsWith('/assets/');
+        if (
+          networkResponse &&
+          networkResponse.status === 200 &&
+          networkResponse.type === 'basic' &&
+          !(isAsset && contentType.includes('text/html'))
+        ) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      });
     })
   );
 });
